@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RecruitmentPlatform.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using RecruitmentPlatform.Infrastructure.Data;
 namespace RecruitmentPlatform.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260710154011_AddSmsLog")]
+    partial class AddSmsLog
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -291,8 +294,6 @@ namespace RecruitmentPlatform.Infrastructure.Migrations
                     b.ToTable("SkillAssessments");
                 });
 
-<<<<<<< HEAD
-=======
             modelBuilder.Entity("RecruitmentPlatform.Domain.Entities.SmsLog", b =>
                 {
                     b.Property<Guid>("Id")
@@ -315,7 +316,6 @@ namespace RecruitmentPlatform.Infrastructure.Migrations
                     b.ToTable("SmsLogs");
                 });
 
->>>>>>> dc5eb2e (Initial frontend commit)
             modelBuilder.Entity("RecruitmentPlatform.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")

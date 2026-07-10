@@ -8,6 +8,11 @@
 
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+<<<<<<< HEAD
+=======
+    <PackageReference Include="Google.Apis.Calendar.v3" Version="1.75.0.4200" />
+    <PackageReference Include="MailKit" Version="4.12.0" />
+>>>>>>> dc5eb2e (Initial frontend commit)
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0" />

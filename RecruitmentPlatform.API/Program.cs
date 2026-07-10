@@ -83,6 +83,25 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
 
+<<<<<<< HEAD
+=======
+// ── Notification Services (Factory Pattern) ───────────────────────────────────
+// EmailNotificationChannel reads Mailtrap config from IConfiguration.
+// Mailtrap:Username and Mailtrap:Password must be set via dotnet user-secrets (never committed to source):
+//   dotnet user-secrets set "Mailtrap:Username" "your-mailtrap-username"
+//   dotnet user-secrets set "Mailtrap:Password" "your-mailtrap-password"
+builder.Services.AddScoped<EmailNotificationChannel>();
+builder.Services.AddScoped<SmsNotificationChannel>();
+builder.Services.AddScoped<INotificationFactory, NotificationFactory>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
+// ── Calendar Service ──────────────────────────────────────────────────────────
+// GoogleCalendarService uses a recruiter-supplied OAuth access token per request.
+// No server-side credentials are needed — the token is passed in the request body.
+// Prototype limitation: full OAuth consent flow is a future enhancement.
+builder.Services.AddScoped<ICalendarService, GoogleCalendarService>();
+
+>>>>>>> dc5eb2e (Initial frontend commit)
 // ── Build ─────────────────────────────────────────────────────────────────────
 var app = builder.Build();
 
@@ -105,7 +124,32 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+<<<<<<< HEAD
 app.UseStaticFiles();
+=======
+
+// Static file serving — intentionally scoped to exclude /uploads.
+// Resume files must ONLY be accessed via the authenticated API endpoint
+// GET /api/candidates/me/resume — direct URL browsing of /uploads/resumes/...
+// is blocked here (security mechanism documented in the report).
+//
+// How it works: UseStaticFiles with a custom FileProvider that points to wwwroot,
+// combined with a OnPrepareResponse hook that returns 404 for any path under /uploads.
+// This means other wwwroot assets (favicon, icons, etc.) still work normally.
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        // Block any direct request whose URL path starts with /uploads
+        if (ctx.Context.Request.Path.StartsWithSegments("/uploads"))
+        {
+            ctx.Context.Response.StatusCode  = StatusCodes.Status404NotFound;
+            ctx.Context.Response.ContentLength = 0;
+            ctx.Context.Response.Body        = Stream.Null;
+        }
+    }
+});
+>>>>>>> dc5eb2e (Initial frontend commit)
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
