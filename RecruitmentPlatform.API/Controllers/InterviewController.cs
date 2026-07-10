@@ -2,10 +2,6 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RecruitmentPlatform.Application.DTOs.Interview;
-<<<<<<< HEAD
-=======
-using RecruitmentPlatform.Application.Interfaces;
->>>>>>> dc5eb2e (Initial frontend commit)
 using RecruitmentPlatform.Domain.Enums;
 using RecruitmentPlatform.Domain.Interfaces;
 
@@ -16,25 +12,9 @@ namespace RecruitmentPlatform.API.Controllers;
 [Authorize]
 public class InterviewController : ControllerBase
 {
-<<<<<<< HEAD
     private readonly IUnitOfWork _uow;
 
     public InterviewController(IUnitOfWork uow) => _uow = uow;
-=======
-    private readonly IUnitOfWork           _uow;
-    private readonly INotificationService  _notifications;
-    private readonly ICalendarService      _calendar;
-
-    public InterviewController(
-        IUnitOfWork          uow,
-        INotificationService notifications,
-        ICalendarService     calendar)
-    {
-        _uow           = uow;
-        _notifications = notifications;
-        _calendar      = calendar;
-    }
->>>>>>> dc5eb2e (Initial frontend commit)
 
     // POST /api/interviews
     [HttpPost]
@@ -63,49 +43,13 @@ public class InterviewController : ControllerBase
         if (application.Interview != null)
             return BadRequest(new { message = "Interview already scheduled for this application." });
 
-<<<<<<< HEAD
-=======
-        // ── Google Calendar integration ───────────────────────────────────────
-        // If the recruiter supplies a CalendarToken, create a Google Calendar event
-        // and use the returned Meet link as the MeetingLink. This is an optional
-        // step — the interview is still created if the Calendar call fails or is skipped.
-        //
-        // Prototype note: the token is a manually obtained OAuth access token from
-        // https://developers.google.com/oauthplayground (scope: calendar.events).
-        // A full OAuth consent flow is documented as a future enhancement.
-        string? resolvedMeetingLink = request.MeetingLink; // default: use the manually supplied link
-
-        if (!string.IsNullOrWhiteSpace(request.CalendarToken))
-        {
-            // Fetch candidate email for the calendar invite attendee list
-            var candidateProfileForCalendar = await _uow.CandidateProfiles.GetByIdAsync(application.CandidateProfileId);
-            var candidateUserForCalendar    = candidateProfileForCalendar != null
-                ? await _uow.Users.GetByIdAsync(candidateProfileForCalendar.UserId)
-                : null;
-
-            var calendarLink = await _calendar.CreateEventAsync(
-                recruiterGoogleToken: request.CalendarToken,
-                title:                $"Interview: {job.Title}",
-                start:                request.ScheduledAt,
-                durationMinutes:      request.DurationMinutes,
-                attendeeEmail:        candidateUserForCalendar?.Email ?? string.Empty);
-
-            if (calendarLink != null)
-                resolvedMeetingLink = calendarLink;
-        }
-
->>>>>>> dc5eb2e (Initial frontend commit)
         var interview = new Domain.Entities.Interview
         {
             Id              = Guid.NewGuid(),
             ApplicationId   = request.ApplicationId,
             ScheduledAt     = request.ScheduledAt,
             DurationMinutes = request.DurationMinutes,
-<<<<<<< HEAD
             MeetingLink     = request.MeetingLink,
-=======
-            MeetingLink     = resolvedMeetingLink,
->>>>>>> dc5eb2e (Initial frontend commit)
             Status          = InterviewStatus.Scheduled,
         };
 
@@ -116,32 +60,6 @@ public class InterviewController : ControllerBase
 
         await _uow.SaveChangesAsync();
 
-<<<<<<< HEAD
-=======
-        // Notify candidate that an interview has been scheduled
-        var candidateProfile = await _uow.CandidateProfiles.GetByIdAsync(application.CandidateProfileId);
-        var candidateUser    = candidateProfile != null ? await _uow.Users.GetByIdAsync(candidateProfile.UserId) : null;
-        if (candidateUser != null && job != null)
-        {
-            var meetingInfo  = string.IsNullOrWhiteSpace(interview.MeetingLink)
-                ? "Details will be sent separately."
-                : $"Meeting link: {interview.MeetingLink}";
-            var emailSubject = $"Interview Scheduled — {job.Title}";
-            var emailBody    = $"""
-                <p>Dear {candidateUser.FullName},</p>
-                <p>Your interview for the position of <strong>{job.Title}</strong> has been scheduled.</p>
-                <ul>
-                    <li><strong>Date &amp; Time:</strong> {interview.ScheduledAt:dddd, dd MMMM yyyy HH:mm} UTC</li>
-                    <li><strong>Duration:</strong> {interview.DurationMinutes} minutes</li>
-                    <li>{meetingInfo}</li>
-                </ul>
-                <p>Best regards,<br/>Recruitment Platform</p>
-                """;
-
-            await _notifications.SendEmailAsync(candidateUser.Email, emailSubject, emailBody);
-        }
-
->>>>>>> dc5eb2e (Initial frontend commit)
         return CreatedAtAction(nameof(CreateInterview), new { id = interview.Id },
             await MapToResponse(interview));
     }

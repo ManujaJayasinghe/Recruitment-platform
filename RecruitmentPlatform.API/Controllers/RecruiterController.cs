@@ -4,10 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using RecruitmentPlatform.Application.DTOs.Application;
 using RecruitmentPlatform.Application.DTOs.Candidate;
 using RecruitmentPlatform.Application.DTOs.Job;
-<<<<<<< HEAD
-=======
-using RecruitmentPlatform.Application.Interfaces;
->>>>>>> dc5eb2e (Initial frontend commit)
 using RecruitmentPlatform.Domain.Entities;
 using RecruitmentPlatform.Domain.Enums;
 using RecruitmentPlatform.Domain.Interfaces;
@@ -19,20 +15,9 @@ namespace RecruitmentPlatform.API.Controllers;
 [Authorize(Roles = "Recruiter")]
 public class RecruiterController : ControllerBase
 {
-<<<<<<< HEAD
     private readonly IUnitOfWork _uow;
 
     public RecruiterController(IUnitOfWork uow) => _uow = uow;
-=======
-    private readonly IUnitOfWork           _uow;
-    private readonly INotificationService  _notifications;
-
-    public RecruiterController(IUnitOfWork uow, INotificationService notifications)
-    {
-        _uow           = uow;
-        _notifications = notifications;
-    }
->>>>>>> dc5eb2e (Initial frontend commit)
 
     // POST /api/recruiter/jobs
     [HttpPost("jobs")]
@@ -220,26 +205,6 @@ public class RecruiterController : ControllerBase
         _uow.Applications.Update(application);
         await _uow.SaveChangesAsync();
 
-<<<<<<< HEAD
-=======
-        // Notify the candidate when their application status changes
-        var profile       = await _uow.CandidateProfiles.GetByIdAsync(application.CandidateProfileId);
-        var candidateUser = profile != null ? await _uow.Users.GetByIdAsync(profile.UserId) : null;
-        if (candidateUser != null)
-        {
-            var statusLabel  = request.Status.ToString();
-            var emailSubject = $"Application Update — {job.Title}";
-            var emailBody    = $"""
-                <p>Dear {candidateUser.FullName},</p>
-                <p>Your application for <strong>{job.Title}</strong> has been updated to: <strong>{statusLabel}</strong>.</p>
-                <p>Log in to the Recruitment Platform to view your application details.</p>
-                <p>Best regards,<br/>Recruitment Platform</p>
-                """;
-
-            await _notifications.SendEmailAsync(candidateUser.Email, emailSubject, emailBody);
-        }
-
->>>>>>> dc5eb2e (Initial frontend commit)
         return Ok(new { id = application.Id, status = application.Status.ToString() });
     }
 

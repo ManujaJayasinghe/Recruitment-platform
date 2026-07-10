@@ -3,10 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RecruitmentPlatform.Application.DTOs.Evaluation;
 using RecruitmentPlatform.Application.DTOs.HiringManager;
-<<<<<<< HEAD
-=======
-using RecruitmentPlatform.Application.Interfaces;
->>>>>>> dc5eb2e (Initial frontend commit)
 using RecruitmentPlatform.Domain.Enums;
 using RecruitmentPlatform.Domain.Interfaces;
 
@@ -17,7 +13,6 @@ namespace RecruitmentPlatform.API.Controllers;
 [Authorize(Roles = "HiringManager")]
 public class HiringManagerController : ControllerBase
 {
-<<<<<<< HEAD
     private readonly IUnitOfWork _uow;
     private readonly ILogger<HiringManagerController> _logger;
 
@@ -25,20 +20,6 @@ public class HiringManagerController : ControllerBase
     {
         _uow = uow;
         _logger = logger;
-=======
-    private readonly IUnitOfWork                       _uow;
-    private readonly INotificationService              _notifications;
-    private readonly ILogger<HiringManagerController>  _logger;
-
-    public HiringManagerController(
-        IUnitOfWork                       uow,
-        INotificationService              notifications,
-        ILogger<HiringManagerController>  logger)
-    {
-        _uow           = uow;
-        _notifications = notifications;
-        _logger        = logger;
->>>>>>> dc5eb2e (Initial frontend commit)
     }
 
     // GET /api/hiring-manager/shortlisted
@@ -166,7 +147,6 @@ public class HiringManagerController : ControllerBase
         application.Status = request.Decision;
         await _uow.SaveChangesAsync();
 
-<<<<<<< HEAD
         // Get candidate info for notification stub
         var profile = await _uow.CandidateProfiles.GetByIdAsync(application.CandidateProfileId);
         var user = profile != null ? await _uow.Users.GetByIdAsync(profile.UserId) : null;
@@ -180,45 +160,12 @@ public class HiringManagerController : ControllerBase
             user?.Email ?? "Unknown",
             decisionText,
             job?.Title ?? "Unknown");
-=======
-        // Get candidate info for notification
-        var profile = await _uow.CandidateProfiles.GetByIdAsync(application.CandidateProfileId);
-        var user    = profile != null ? await _uow.Users.GetByIdAsync(profile.UserId) : null;
-        var job     = await _uow.JobPostings.GetByIdAsync(application.JobPostingId);
-
-        // Send email notification to candidate (replaces Part 5.3 log stub)
-        if (user != null && job != null)
-        {
-            var decisionText  = request.Decision == ApplicationStatus.Hired ? "Congratulations, you have been hired" : "Unfortunately, your application has been unsuccessful";
-            var emailSubject  = request.Decision == ApplicationStatus.Hired
-                ? $"Job Offer — {job.Title}"
-                : $"Application Update — {job.Title}";
-            var emailBody     = $"""
-                <p>Dear {user.FullName},</p>
-                <p>{decisionText} for the position of <strong>{job.Title}</strong>.</p>
-                <p>Thank you for your interest in joining our team.</p>
-                <p>Best regards,<br/>Recruitment Platform</p>
-                """;
-
-            await _notifications.SendEmailAsync(user.Email, emailSubject, emailBody);
-        }
-        else
-        {
-            _logger.LogWarning(
-                "[HiringManagerController] Could not send notification for application {ApplicationId} — candidate or job data missing.",
-                id);
-        }
->>>>>>> dc5eb2e (Initial frontend commit)
 
         return Ok(new
         {
             id = application.Id,
             status = application.Status,
-<<<<<<< HEAD
             message = $"Application status updated to {request.Decision}. Notification logged for candidate."
-=======
-            message = $"Application status updated to {request.Decision}. Notification sent to candidate."
->>>>>>> dc5eb2e (Initial frontend commit)
         });
     }
 

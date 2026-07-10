@@ -291,31 +291,6 @@ namespace RecruitmentPlatform.Infrastructure.Migrations
                     b.ToTable("SkillAssessments");
                 });
 
-<<<<<<< HEAD
-=======
-            modelBuilder.Entity("RecruitmentPlatform.Domain.Entities.SmsLog", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PhoneNumber")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("SentAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("SmsLogs");
-                });
-
->>>>>>> dc5eb2e (Initial frontend commit)
             modelBuilder.Entity("RecruitmentPlatform.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
