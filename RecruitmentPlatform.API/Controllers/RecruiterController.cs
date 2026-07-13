@@ -20,17 +20,20 @@ public class RecruiterController : ControllerBase
     private readonly IUnitOfWork _uow;
     private readonly RankingService _rankingService;
     private readonly IAIService _aiService;
+    private readonly INotificationFactory _notificationFactory;
     private readonly ILogger<RecruiterController> _logger;
 
     public RecruiterController(
         IUnitOfWork uow,
         RankingService rankingService,
         IAIService aiService,
+        INotificationFactory notificationFactory,
         ILogger<RecruiterController> logger)
     {
         _uow = uow;
         _rankingService = rankingService;
         _aiService = aiService;
+        _notificationFactory = notificationFactory;
         _logger = logger;
     }
 
@@ -314,6 +317,21 @@ Generate 5 interview questions for this position.";
         application.Status = request.Status;
         _uow.Applications.Update(application);
         await _uow.SaveChangesAsync();
+
+        // Notify candidate of status change
+        var profile = await _uow.CandidateProfiles.GetByIdAsync(application.CandidateProfileId);
+        var candidate = profile != null ? await _uow.Users.GetByIdAsync(profile.UserId) : null;
+        if (candidate != null)
+        {
+            var emailChannel = _notificationFactory.CreateNotification(NotificationType.Email);
+            await emailChannel.SendAsync(
+                candidate.Email,
+                $"Application Update — {job.Title}",
+                $"<p>Hi {candidate.FullName},</p>" +
+                $"<p>Your application for <strong>{job.Title}</strong> has been updated to: " +
+                $"<strong>{request.Status}</strong>.</p>" +
+                $"<p>Log in to your account to view more details.</p>");
+        }
 
         return Ok(new { id = application.Id, status = application.Status.ToString() });
     }

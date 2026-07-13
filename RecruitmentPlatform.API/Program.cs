@@ -7,6 +7,7 @@ using RecruitmentPlatform.Application.Interfaces;
 using RecruitmentPlatform.Application.Services;
 using RecruitmentPlatform.Domain.Interfaces;
 using RecruitmentPlatform.Infrastructure.Data;
+using RecruitmentPlatform.Infrastructure.Notifications;
 using RecruitmentPlatform.Infrastructure.Repositories;
 using RecruitmentPlatform.Infrastructure.Services;
 
@@ -90,6 +91,14 @@ builder.Services.AddScoped<ResumeParsingService>();
 builder.Services.AddScoped<ICandidateRankingStrategy, EmbeddingMatchStrategy>();
 builder.Services.AddScoped<RankingService>();
 
+// ── Notifications ─────────────────────────────────────────────────────────────
+builder.Services.AddScoped<EmailNotificationChannel>();
+builder.Services.AddScoped<SmsNotificationChannel>();
+builder.Services.AddScoped<INotificationFactory, NotificationFactory>();
+
+// ── Calendar Integration ──────────────────────────────────────────────────────
+builder.Services.AddScoped<ICalendarService, GoogleCalendarService>();
+
 // ── Build ─────────────────────────────────────────────────────────────────────
 var app = builder.Build();
 
@@ -112,7 +121,22 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+
+// Static files - but block direct access to uploads folder
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        // Block direct access to /uploads folder - must go through authenticated API
+        if (ctx.Context.Request.Path.StartsWithSegments("/uploads"))
+        {
+            ctx.Context.Response.StatusCode = 403; // Forbidden
+            ctx.Context.Response.ContentLength = 0;
+            ctx.Context.Response.Body = Stream.Null;
+        }
+    }
+});
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
