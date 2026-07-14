@@ -20,6 +20,8 @@ public class EmailNotificationChannel : INotificationChannel
 
     public async Task SendAsync(string recipient, string subject, string body)
     {
+        _logger.LogInformation("Preparing to send email. Recipient: {Recipient}, Subject: {Subject}", recipient, subject);
+        
         var host      = _config["Mailtrap:Host"]      ?? "sandbox.smtp.mailtrap.io";
         var port      = int.Parse(_config["Mailtrap:Port"] ?? "587");
         var username  = _config["Mailtrap:Username"];
@@ -36,20 +38,28 @@ public class EmailNotificationChannel : INotificationChannel
             return;
         }
 
-        var message = new MimeMessage();
-        message.From.Add(new MailboxAddress(fromName, fromEmail));
-        message.To.Add(MailboxAddress.Parse(recipient));
-        message.Subject = subject;
-        message.Body = new TextPart("html") { Text = body };
+        try
+        {
+            var message = new MimeMessage();
+            message.From.Add(new MailboxAddress(fromName, fromEmail));
+            message.To.Add(MailboxAddress.Parse(recipient));
+            message.Subject = subject;
+            message.Body = new TextPart("html") { Text = body };
 
-        using var client = new SmtpClient();
-        await client.ConnectAsync(host, port, SecureSocketOptions.StartTls);
-        await client.AuthenticateAsync(username, password);
-        await client.SendAsync(message);
-        await client.DisconnectAsync(true);
+            using var client = new SmtpClient();
+            await client.ConnectAsync(host, port, SecureSocketOptions.StartTls);
+            await client.AuthenticateAsync(username, password);
+            await client.SendAsync(message);
+            await client.DisconnectAsync(true);
 
-        _logger.LogInformation(
-            "Email sent to {Recipient} via Mailtrap | Subject: {Subject}",
-            recipient, subject);
+            _logger.LogInformation(
+                "✅ Email sent successfully | To: {Recipient} | Subject: {Subject} | Via: {Host}",
+                recipient, subject, host);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send email to {Recipient} with subject '{Subject}'", recipient, subject);
+            throw;
+        }
     }
 }

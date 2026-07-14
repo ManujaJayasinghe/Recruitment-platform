@@ -23,20 +23,31 @@ public class SmsNotificationChannel : INotificationChannel
 
     public async Task SendAsync(string recipient, string subject, string body)
     {
-        // recipient is treated as a phone number for SMS
-        var smsLog = new SmsLog
+        _logger.LogInformation("Preparing to send SMS. Recipient: {PhoneNumber}, Subject: {Subject}", recipient, subject);
+        
+        try
         {
-            Id          = Guid.NewGuid(),
-            PhoneNumber = recipient,
-            Message     = $"{subject}: {body}",
-            SentAt      = DateTime.UtcNow,
-        };
+            // recipient is treated as a phone number for SMS
+            var smsLog = new SmsLog
+            {
+                Id          = Guid.NewGuid(),
+                PhoneNumber = recipient,
+                Message     = $"{subject}: {body}",
+                SentAt      = DateTime.UtcNow,
+            };
 
-        await _db.SmsLogs.AddAsync(smsLog);
-        await _db.SaveChangesAsync();
+            await _db.SmsLogs.AddAsync(smsLog);
+            await _db.SaveChangesAsync();
 
-        _logger.LogInformation(
-            "SMS to {PhoneNumber}: {Message}",
-            recipient, smsLog.Message);
+            _logger.LogInformation(
+                "📱 SMS logged successfully | To: {PhoneNumber} | Message preview: {Preview}",
+                recipient, 
+                smsLog.Message.Length > 50 ? smsLog.Message.Substring(0, 50) + "..." : smsLog.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to log SMS for recipient {PhoneNumber}", recipient);
+            throw;
+        }
     }
 }
