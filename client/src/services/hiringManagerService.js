@@ -73,6 +73,48 @@ const hiringManagerService = {
     const response = await api.patch(`/interview/${id}/feedback`, data);
     return response.data;
   },
+
+  /**
+   * Create evaluation for an interview
+   * @param {Object} data - Evaluation data
+   * @param {string} data.interviewId - Interview ID
+   * @param {number} data.score - Score (1-10)
+   * @param {string} data.feedback - Feedback text
+   * @param {string} data.recommendation - Recommendation (Hire/Reject/NeedsAnotherRound)
+   * @returns {Promise} Created evaluation
+   */
+  createEvaluation: async (data) => {
+    const response = await api.post('/hiring-manager/evaluations', {
+      InterviewId: data.interviewId,
+      Score: data.score,
+      Feedback: data.feedback,
+      Recommendation: data.recommendation,
+    });
+    return response.data;
+  },
+
+  /**
+   * Get evaluations for an interview
+   * @param {string} interviewId - Interview ID
+   * @returns {Promise} List of evaluations
+   */
+  getEvaluationsByInterview: async (interviewId) => {
+    const response = await api.get(`/hiring-manager/evaluations/${interviewId}`);
+    return response.data;
+  },
+
+  /**
+   * Make a hiring decision for an application
+   * @param {string} applicationId - Application ID
+   * @param {string} decision - Decision ('Hired' or 'Rejected')
+   * @returns {Promise} Decision response
+   */
+  makeDecision: async (applicationId, decision) => {
+    const response = await api.patch(`/hiring-manager/applications/${applicationId}/decision`, {
+      decision: decision
+    });
+    return response.data;
+  },
 };
 
 export default hiringManagerService;
