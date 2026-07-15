@@ -43,6 +43,16 @@ const recruiterService = {
   },
 
   /**
+   * Get job posting by ID
+   * @param {string} id - Job posting ID
+   * @returns {Promise} Job posting details
+   */
+  getJobById: async (id) => {
+    const response = await api.get(`/recruiter/jobs/${id}`);
+    return response.data;
+  },
+
+  /**
    * Delete job posting
    * @param {string} id - Job posting ID
    * @returns {Promise} Success response

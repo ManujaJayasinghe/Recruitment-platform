@@ -71,6 +71,7 @@ function App() {
           <Route path="dashboard" element={<RecruiterDashboardPage />} />
           <Route path="jobs" element={<RecruiterJobsPage />} />
           <Route path="jobs/new" element={<RecruiterNewJobPage />} />
+          <Route path="jobs/:id/edit" element={<RecruiterNewJobPage />} />
           <Route path="jobs/:id/applicants" element={<RecruiterJobApplicantsPage />} />
           <Route path="candidates" element={<RecruiterCandidatesPage />} />
           <Route index element={<Navigate to="dashboard" replace />} />
