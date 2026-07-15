@@ -10,9 +10,6 @@ public class CandidateProfileResponse
     public string       Summary           { get; set; } = string.Empty;
     public List<string> Skills            { get; set; } = new();
     public int          YearsOfExperience { get; set; }
-<<<<<<< HEAD
-    public string?      ResumeFileUrl     { get; set; }
-=======
 
     /// <summary>
     /// True if a resume has been uploaded. Use GET /api/candidates/me/resume to download.
@@ -22,5 +19,4 @@ public class CandidateProfileResponse
     public bool         HasResume         { get; set; }
 
     public string?      ParsedResumeJson  { get; set; }
->>>>>>> dc5eb2e (Initial frontend commit)
 }

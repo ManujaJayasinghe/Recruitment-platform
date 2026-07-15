@@ -6,7 +6,7 @@ const candidateService = {
    * @returns {Promise} Candidate profile data
    */
   getProfile: async () => {
-    const response = await api.get('/candidate/profile');
+    const response = await api.get('/candidates/me');
     return response.data;
   },
 
@@ -16,23 +16,25 @@ const candidateService = {
    * @returns {Promise} Updated profile
    */
   updateProfile: async (data) => {
-    const response = await api.put('/candidate/profile', data);
+    const response = await api.put('/candidates/me', data);
     return response.data;
   },
 
   /**
    * Upload resume
    * @param {File} file - Resume file
+   * @param {Function} onUploadProgress - Progress callback
    * @returns {Promise} Upload result
    */
-  uploadResume: async (file) => {
+  uploadResume: async (file, onUploadProgress) => {
     const formData = new FormData();
     formData.append('file', file);
     
-    const response = await api.post('/candidate/profile/upload-resume', formData, {
+    const response = await api.post('/candidates/me/resume', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      onUploadProgress: onUploadProgress,
     });
     return response.data;
   },
