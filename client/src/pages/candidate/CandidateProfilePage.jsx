@@ -234,9 +234,9 @@ const CandidateProfilePage = () => {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
-        <p className="text-gray-600 mt-2">Manage your professional information</p>
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">My Profile</h1>
+        <p className="text-sm sm:text-base text-gray-600 mt-2">Manage your professional information</p>
       </div>
 
       {/* Success/Error Message */}
@@ -259,19 +259,19 @@ const CandidateProfilePage = () => {
 
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
         {/* Header with Avatar */}
-        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 h-32"></div>
-        <div className="px-8 pb-8">
-          <div className="flex items-end -mt-16 mb-6">
-            <div className="w-32 h-32 rounded-full bg-white border-4 border-white shadow-lg flex items-center justify-center">
-              <div className="w-28 h-28 rounded-full bg-indigo-600 flex items-center justify-center">
-                <span className="text-3xl font-bold text-white">
+        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 h-24 sm:h-32"></div>
+        <div className="px-4 sm:px-8 pb-6 sm:pb-8">
+          <div className="flex flex-col sm:flex-row items-center sm:items-end -mt-12 sm:-mt-16 mb-6">
+            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-white border-4 border-white shadow-lg flex items-center justify-center">
+              <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-full bg-indigo-600 flex items-center justify-center">
+                <span className="text-2xl sm:text-3xl font-bold text-white">
                   {getInitials(profile?.fullName || user?.fullName)}
                 </span>
               </div>
             </div>
-            <div className="ml-6 mb-2">
-              <h2 className="text-2xl font-bold text-gray-900">{profile?.fullName}</h2>
-              <p className="text-gray-600">{profile?.email}</p>
+            <div className="sm:ml-6 mt-4 sm:mt-0 sm:mb-2 text-center sm:text-left">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{profile?.fullName}</h2>
+              <p className="text-sm sm:text-base text-gray-600">{profile?.email}</p>
             </div>
           </div>
 
@@ -374,7 +374,7 @@ const CandidateProfilePage = () => {
               <button
                 type="submit"
                 disabled={saving}
-                className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Save className="w-4 h-4" />
                 {saving ? 'Saving...' : 'Save Profile'}
@@ -385,16 +385,16 @@ const CandidateProfilePage = () => {
       </div>
 
       {/* Resume Upload Section */}
-      <div className="mt-8 bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="px-8 py-6">
+      <div className="mt-6 sm:mt-8 bg-white rounded-lg shadow-lg overflow-hidden">
+        <div className="px-4 sm:px-8 py-6">
           <div className="flex items-center gap-2 mb-4">
             <FileText className="w-5 h-5 text-indigo-600" />
-            <h2 className="text-xl font-bold text-gray-900">Resume Upload</h2>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900">Resume Upload</h2>
           </div>
 
           {/* Drag and Drop Area */}
           <div
-            className={`relative border-2 border-dashed rounded-lg p-8 text-center transition ${
+            className={`relative border-2 border-dashed rounded-lg p-6 sm:p-8 text-center transition ${
               dragActive
                 ? 'border-indigo-500 bg-indigo-50'
                 : 'border-gray-300 hover:border-indigo-400'
@@ -414,17 +414,17 @@ const CandidateProfilePage = () => {
 
             {!uploading ? (
               <>
-                <Upload className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                <p className="text-lg font-medium text-gray-700 mb-2">
+                <Upload className="w-10 h-10 sm:w-12 sm:h-12 mx-auto text-gray-400 mb-4" />
+                <p className="text-base sm:text-lg font-medium text-gray-700 mb-2">
                   Drop your resume here or click to browse
                 </p>
-                <p className="text-sm text-gray-500 mb-4">
+                <p className="text-xs sm:text-sm text-gray-500 mb-4">
                   PDF only, max 5MB
                 </p>
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition"
+                  className="w-full sm:w-auto px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition"
                 >
                   Choose File
                 </button>

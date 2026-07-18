@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import { Search, Briefcase, Calendar, ChevronRight, Filter, Loader, Sparkles, Target } from 'lucide-react';
+import { Search, Briefcase, Calendar, ChevronRight, Filter, Sparkles, Target } from 'lucide-react';
+import LoadingSpinner from '../../components/LoadingSpinner';
+import ErrorMessage from '../../components/ErrorMessage';
+import EmptyState from '../../components/EmptyState';
 
 const CandidateJobsPage = () => {
   const navigate = useNavigate();
   const [jobs, setJobs] = useState([]);
   const [recommendedJobs, setRecommendedJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [loadingRecommended, setLoadingRecommended] = useState(true);
   const [departments, setDepartments] = useState([]);
   const [filters, setFilters] = useState({
@@ -42,7 +46,6 @@ const CandidateJobsPage = () => {
       setLoadingRecommended(true);
       const response = await api.get('/jobs/recommended');
       const recommended = Array.isArray(response.data) ? response.data : [];
-      // Take top 3 recommendations
       setRecommendedJobs(recommended.slice(0, 3));
     } catch (error) {
       console.error('Error loading recommended jobs:', error);
@@ -55,28 +58,25 @@ const CandidateJobsPage = () => {
   const loadJobs = async () => {
     try {
       setLoading(true);
+      setError(null);
       
-      // Build query params matching backend API
       const params = new URLSearchParams();
       if (filters.keyword) params.append('title', filters.keyword);
       if (filters.department) params.append('department', filters.department);
       if (filters.minExperience) params.append('minExperience', filters.minExperience);
       
       const response = await api.get(`/jobs?${params.toString()}`);
-      
-      // Handle array response
       const allJobs = Array.isArray(response.data) ? response.data : [];
       
-      // Calculate pagination
       const total = Math.ceil(allJobs.length / itemsPerPage);
       setTotalPages(total);
       
-      // Slice for current page
       const start = (currentPage - 1) * itemsPerPage;
       const end = start + itemsPerPage;
       setJobs(allJobs.slice(start, end));
     } catch (error) {
       console.error('Error loading jobs:', error);
+      setError('Failed to load job listings. Please try again.');
       setJobs([]);
       setTotalPages(1);
     } finally {
@@ -120,26 +120,26 @@ const CandidateJobsPage = () => {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Browse Jobs</h1>
-        <p className="text-gray-600 mt-2">Find your next opportunity</p>
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Browse Jobs</h1>
+        <p className="text-sm sm:text-base text-gray-600 mt-2">Find your next opportunity</p>
       </div>
 
       {/* Recommended Jobs Section */}
       {!loadingRecommended && recommendedJobs.length > 0 && (
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <div className="flex items-center gap-3 mb-4">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-indigo-600" />
-              <h2 className="text-2xl font-bold text-gray-900">Recommended for You</h2>
+              <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600" />
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Recommended for You</h2>
             </div>
           </div>
-          <p className="text-sm text-gray-600 mb-4 flex items-center gap-2">
+          <p className="text-xs sm:text-sm text-gray-600 mb-4 flex items-center gap-2">
             <Target className="w-4 h-4" />
             Recommended based on your profile skills
           </p>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
             {recommendedJobs.map((job) => {
               const matchPercentage = calculateMatchPercentage(
                 job.matchScore,
@@ -311,17 +311,19 @@ const CandidateJobsPage = () => {
       </div>
       
       {loading ? (
-        <div className="flex items-center justify-center h-64">
-          <Loader className="w-8 h-8 text-indigo-600 animate-spin" />
-        </div>
+        <LoadingSpinner size="lg" text="Loading job listings..." />
+      ) : error ? (
+        <ErrorMessage
+          title="Unable to load jobs"
+          message={error}
+          onRetry={loadJobs}
+        />
       ) : jobs.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-12 text-center">
-          <Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No jobs found</h3>
-          <p className="text-gray-600">
-            Try adjusting your search filters or check back later for new opportunities.
-          </p>
-        </div>
+        <EmptyState
+          icon={Briefcase}
+          title="No jobs found"
+          message="Try adjusting your search filters or check back later for new opportunities."
+        />
       ) : (
         <>
           <div className="mb-4 text-sm text-gray-600">

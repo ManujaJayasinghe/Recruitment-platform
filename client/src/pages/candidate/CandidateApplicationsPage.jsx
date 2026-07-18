@@ -15,11 +15,15 @@ import {
   Users,
   AlertCircle
 } from 'lucide-react';
+import LoadingSpinner from '../../components/LoadingSpinner';
+import ErrorMessage from '../../components/ErrorMessage';
+import EmptyState from '../../components/EmptyState';
 
 const CandidateApplicationsPage = () => {
   const navigate = useNavigate();
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
   const [messages, setMessages] = useState({});
   const [loadingMessages, setLoadingMessages] = useState({});
@@ -33,10 +37,12 @@ const CandidateApplicationsPage = () => {
   const loadApplications = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await api.get('/applications/me');
       setApplications(response.data || []);
     } catch (error) {
       console.error('Error loading applications:', error);
+      setError('Failed to load your applications. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -191,34 +197,34 @@ const CandidateApplicationsPage = () => {
   };
 
   if (loading) {
+    return <LoadingSpinner size="lg" text="Loading your applications..." />;
+  }
+
+  if (error) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader className="w-8 h-8 text-indigo-600 animate-spin" />
-      </div>
+      <ErrorMessage
+        title="Unable to load applications"
+        message={error}
+        onRetry={loadApplications}
+      />
     );
   }
 
   return (
     <div className="max-w-6xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">My Applications</h1>
-        <p className="text-gray-600 mt-2">Track the status of your job applications</p>
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">My Applications</h1>
+        <p className="text-sm sm:text-base text-gray-600 mt-2">Track the status of your job applications</p>
       </div>
 
       {applications.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-12 text-center">
-          <Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No applications yet</h3>
-          <p className="text-gray-600 mb-6">
-            Start applying to jobs to track your applications here.
-          </p>
-          <button
-            onClick={() => navigate('/candidate/jobs')}
-            className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition"
-          >
-            Browse Jobs
-          </button>
-        </div>
+        <EmptyState
+          icon={Briefcase}
+          title="No applications yet"
+          message="Start applying to jobs to track your applications here. Browse available positions and submit your application today!"
+          actionLabel="Browse Jobs"
+          onAction={() => navigate('/candidate/jobs')}
+        />
       ) : (
         <div className="space-y-4">
           {applications.map((app) => {
@@ -234,32 +240,32 @@ const CandidateApplicationsPage = () => {
               >
                 {/* Application Row */}
                 <div
-                  className="p-6 cursor-pointer hover:bg-gray-50 transition"
+                  className="p-4 sm:p-6 cursor-pointer hover:bg-gray-50 transition"
                   onClick={() => handleExpandToggle(app.id)}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-start gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col gap-3">
                         <div className="flex-1">
-                          <h3 className="text-lg font-bold text-gray-900 mb-1">
+                          <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1">
                             {app.jobTitle}
                           </h3>
-                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
                             {app.department && (
                               <div className="flex items-center gap-1.5">
-                                <Briefcase className="w-4 h-4" />
-                                {app.department}
+                                <Briefcase className="w-4 h-4 flex-shrink-0" />
+                                <span className="truncate">{app.department}</span>
                               </div>
                             )}
                             <div className="flex items-center gap-1.5">
-                              <Calendar className="w-4 h-4" />
+                              <Calendar className="w-4 h-4 flex-shrink-0" />
                               Applied {formatDate(app.appliedAt)}
                             </div>
                           </div>
                         </div>
                         
                         <div className="flex items-center gap-3">
-                          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border ${getStatusColor(app.status)}`}>
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium border ${getStatusColor(app.status)}`}>
                             {getStatusIcon(app.status)}
                             {app.status}
                           </span>
@@ -277,15 +283,19 @@ const CandidateApplicationsPage = () => {
 
                 {/* Expanded Content */}
                 {isExpanded && (
-                  <div className="border-t border-gray-200 bg-gray-50 p-6">
+                  <div className="border-t border-gray-200 bg-gray-50 p-4 sm:p-6">
                     {/* Status Pipeline */}
-                    <div className="bg-white rounded-lg p-6 mb-6 shadow-sm">
-                      <h4 className="text-sm font-semibold text-gray-700 mb-4">Application Progress</h4>
-                      {renderStatusPipeline(app.status)}
+                    <div className="bg-white rounded-lg p-4 sm:p-6 mb-4 sm:mb-6 shadow-sm">
+                      <h4 className="text-xs sm:text-sm font-semibold text-gray-700 mb-4">Application Progress</h4>
+                      <div className="overflow-x-auto -mx-4 sm:mx-0">
+                        <div className="min-w-[500px]">
+                          {renderStatusPipeline(app.status)}
+                        </div>
+                      </div>
                     </div>
 
                     {/* Messages Section */}
-                    <div className="bg-white rounded-lg p-6 shadow-sm">
+                    <div className="bg-white rounded-lg p-4 sm:p-6 shadow-sm">
                       <div className="flex items-center gap-2 mb-4">
                         <MessageSquare className="w-5 h-5 text-gray-700" />
                         <h4 className="text-sm font-semibold text-gray-700">Messages</h4>

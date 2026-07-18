@@ -11,31 +11,39 @@ import {
   Loader,
   Send
 } from 'lucide-react';
+import LoadingSpinner from '../../components/LoadingSpinner';
+import ErrorMessage from '../../components/ErrorMessage';
 
 const CandidateJobDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [applying, setApplying] = useState(false);
   const [applied, setApplied] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
-    loadJobDetails();
-    checkApplicationStatus();
+    loadData();
   }, [id]);
 
-  const loadJobDetails = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/jobs/${id}`);
-      setJob(response.data);
+      setError(null);
+      await Promise.all([loadJobDetails(), checkApplicationStatus()]);
     } catch (error) {
-      console.error('Error loading job details:', error);
+      console.error('Error loading data:', error);
+      setError('Failed to load job details. Please try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadJobDetails = async () => {
+    const response = await api.get(`/jobs/${id}`);
+    setJob(response.data);
   };
 
   const checkApplicationStatus = async () => {
@@ -77,26 +85,28 @@ const CandidateJobDetailPage = () => {
   };
 
   if (loading) {
+    return <LoadingSpinner size="lg" text="Loading job details..." />;
+  }
+
+  if (error) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader className="w-8 h-8 text-indigo-600 animate-spin" />
-      </div>
+      <ErrorMessage
+        title="Unable to load job"
+        message={error}
+        onRetry={loadData}
+      />
     );
   }
 
   if (!job) {
     return (
       <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-lg shadow p-12 text-center">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Job not found</h3>
-          <p className="text-gray-600 mb-6">The job you're looking for doesn't exist or has been removed.</p>
-          <button
-            onClick={() => navigate('/candidate/jobs')}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-          >
-            Back to Jobs
-          </button>
-        </div>
+        <ErrorMessage
+          title="Job not found"
+          message="The job you're looking for doesn't exist or has been removed."
+          actionLabel="Back to Jobs"
+          onRetry={() => navigate('/candidate/jobs')}
+        />
       </div>
     );
   }
@@ -105,8 +115,8 @@ const CandidateJobDetailPage = () => {
     <div className="max-w-4xl mx-auto">
       {/* Success Toast */}
       {showSuccess && (
-        <div className="fixed top-4 right-4 z-50 animate-slide-in">
-          <div className="bg-green-50 border border-green-200 rounded-lg shadow-lg p-4 flex items-start gap-3 max-w-md">
+        <div className="fixed top-4 right-4 left-4 sm:left-auto z-50 animate-slide-in">
+          <div className="bg-green-50 border border-green-200 rounded-lg shadow-lg p-4 flex items-start gap-3 max-w-md mx-auto sm:mx-0">
             <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
             <div>
               <h4 className="font-semibold text-green-900 mb-1">Application Submitted!</h4>
@@ -134,11 +144,11 @@ const CandidateJobDetailPage = () => {
       </button>
 
       {/* Job Header Card */}
-      <div className="bg-white rounded-lg shadow-lg p-8 mb-6">
-        <div className="flex justify-between items-start mb-6">
+      <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8 mb-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
           <div className="flex-1">
-            <h1 className="text-3xl font-bold text-gray-900 mb-3">{job.title}</h1>
-            <div className="flex flex-wrap gap-4 text-gray-600">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">{job.title}</h1>
+            <div className="flex flex-wrap gap-3 sm:gap-4 text-sm sm:text-base text-gray-600">
               <div className="flex items-center gap-2">
                 <Briefcase className="w-5 h-5" />
                 <span>{job.department}</span>
@@ -158,7 +168,7 @@ const CandidateJobDetailPage = () => {
           {applied ? (
             <button
               disabled
-              className="flex items-center gap-2 px-6 py-3 bg-green-100 text-green-700 rounded-lg font-medium cursor-not-allowed"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-green-100 text-green-700 rounded-lg font-medium cursor-not-allowed"
             >
               <CheckCircle2 className="w-5 h-5" />
               Applied
@@ -167,7 +177,7 @@ const CandidateJobDetailPage = () => {
             <button
               onClick={handleApply}
               disabled={applying}
-              className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {applying ? (
                 <>
@@ -191,18 +201,18 @@ const CandidateJobDetailPage = () => {
       </div>
 
       {/* Job Description */}
-      <div className="bg-white rounded-lg shadow p-8 mb-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Job Description</h2>
-        <div className="text-gray-700 whitespace-pre-wrap leading-relaxed">
+      <div className="bg-white rounded-lg shadow p-4 sm:p-8 mb-6">
+        <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Job Description</h2>
+        <div className="text-sm sm:text-base text-gray-700 whitespace-pre-wrap leading-relaxed">
           {job.description}
         </div>
       </div>
 
       {/* Required Skills */}
       {job.requiredSkills && job.requiredSkills.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-8 mb-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Required Skills</h2>
-          <div className="flex flex-wrap gap-3">
+        <div className="bg-white rounded-lg shadow p-4 sm:p-8 mb-6">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Required Skills</h2>
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             {job.requiredSkills.map((skill, index) => (
               <span
                 key={index}
@@ -216,9 +226,9 @@ const CandidateJobDetailPage = () => {
       )}
 
       {/* Additional Info */}
-      <div className="bg-white rounded-lg shadow p-8">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Additional Information</h2>
-        <div className="space-y-3 text-gray-700">
+      <div className="bg-white rounded-lg shadow p-4 sm:p-8">
+        <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Additional Information</h2>
+        <div className="space-y-3 text-sm sm:text-base text-gray-700">
           <div className="flex items-start gap-3">
             <Users className="w-5 h-5 text-gray-400 mt-0.5" />
             <div>

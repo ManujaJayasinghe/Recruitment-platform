@@ -151,22 +151,22 @@ const RecruiterJobApplicantsPage = () => {
   return (
     <div className="max-w-7xl mx-auto">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-4 sm:mb-6">
         <button
           onClick={() => navigate('/recruiter/jobs')}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition"
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition text-sm sm:text-base"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
           Back to Jobs
         </button>
         
         {jobInfo && (
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
               {jobInfo.title}
             </h1>
-            <p className="text-gray-600 mb-4">{jobInfo.department}</p>
-            <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
+            <p className="text-sm sm:text-base text-gray-600 mb-4">{jobInfo.department}</p>
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-600 mb-4">
               <span className="flex items-center gap-1">
                 <User className="w-4 h-4" />
                 {applicants.length} applicants
@@ -220,20 +220,20 @@ const RecruiterJobApplicantsPage = () => {
       {/* Applicants List */}
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">
+        <div className="px-4 sm:px-6 py-4 bg-gray-50 border-b border-gray-200">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900">
             Applicants ({applicants.length})
           </h2>
         </div>
 
         {/* Empty State */}
         {applicants.length === 0 && (
-          <div className="text-center py-16">
-            <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <div className="text-center py-12 sm:py-16">
+            <User className="w-12 h-12 sm:w-16 sm:h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
               No applicants yet
             </h3>
-            <p className="text-gray-600">
+            <p className="text-sm sm:text-base text-gray-600">
               Applications will appear here once candidates apply to this job
             </p>
           </div>
@@ -241,7 +241,7 @@ const RecruiterJobApplicantsPage = () => {
 
         {/* Applicants Table */}
         {applicants.length > 0 && (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
