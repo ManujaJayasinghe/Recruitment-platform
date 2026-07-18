@@ -116,6 +116,10 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 // Prototype limitation: full OAuth consent flow is a future enhancement.
 builder.Services.AddScoped<ICalendarService, GoogleCalendarService>();
 
+// ── AI Service ────────────────────────────────────────────────────────────────
+// AIService provides chatbot responses and interview question generation
+builder.Services.AddScoped<IAIService, AIService>();
+
 // ── Build ─────────────────────────────────────────────────────────────────────
 var app = builder.Build();
 

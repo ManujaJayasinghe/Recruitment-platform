@@ -18,11 +18,16 @@ public class RecruiterController : ControllerBase
 {
     private readonly IUnitOfWork           _uow;
     private readonly INotificationService  _notifications;
+    private readonly IAIService            _aiService;
 
-    public RecruiterController(IUnitOfWork uow, INotificationService notifications)
+    public RecruiterController(
+        IUnitOfWork uow, 
+        INotificationService notifications,
+        IAIService aiService)
     {
         _uow           = uow;
         _notifications = notifications;
+        _aiService     = aiService;
     }
 
     // POST /api/recruiter/jobs
@@ -324,6 +329,42 @@ public class RecruiterController : ControllerBase
             TotalCount = filtered.Count,
             Items      = items,
         });
+    }
+
+    // POST /api/recruiter/jobs/{id}/generate-interview-questions
+    [HttpPost("jobs/{id:guid}/generate-interview-questions")]
+    public async Task<IActionResult> GenerateInterviewQuestions(Guid id)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var job = await _uow.JobPostings.GetByIdAsync(id);
+        if (job == null)
+            return NotFound(new { message = "Job posting not found." });
+
+        // Verify the recruiter owns this job
+        if (job.PostedByUserId != userId.Value)
+            return Forbid();
+
+        try
+        {
+            var questions = await _aiService.GenerateInterviewQuestionsAsync(
+                job.Title,
+                job.Description,
+                job.RequiredSkills,
+                "gpt-4-mini"
+            );
+
+            return Ok(new { questions });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new 
+            { 
+                message = "Failed to generate interview questions.",
+                error = ex.Message 
+            });
+        }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

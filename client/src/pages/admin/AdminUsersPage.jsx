@@ -115,7 +115,14 @@ const AdminUsersPage = () => {
       await loadUsers();
     } catch (error) {
       console.error('Error deleting user:', error);
-      alert('Failed to delete user: ' + (error.response?.data?.message || error.message));
+      
+      // Check if it's a 409 Conflict error (user has related data)
+      if (error.response?.status === 409) {
+        alert('This user has associated records (applications, job postings, or evaluations) and cannot be permanently deleted. Deactivate the account instead to prevent login while preserving data integrity.');
+      } else {
+        alert('Failed to delete user: ' + (error.response?.data?.message || error.message));
+      }
+      
       setDeletingUser(null);
     }
   };
@@ -336,8 +343,13 @@ const AdminUsersPage = () => {
                     <td className="px-6 py-4 text-right">
                       <button
                         onClick={() => handleDeleteClick(user)}
-                        className="inline-flex items-center gap-1 px-3 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition"
-                        title="Delete user"
+                        disabled={user.isActive}
+                        className={`inline-flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg transition ${
+                          user.isActive
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-red-600 text-white hover:bg-red-700'
+                        }`}
+                        title={user.isActive ? 'Deactivate user before deleting' : 'Delete user permanently'}
                       >
                         <Trash2 className="w-4 h-4" />
                         Delete
@@ -396,16 +408,21 @@ const AdminUsersPage = () => {
                   Confirm User Deletion
                 </h3>
                 <p className="text-gray-600 mb-2">
-                  Are you sure you want to permanently delete this user?
+                  Are you sure you want to permanently delete this deactivated user?
                 </p>
-                <div className="bg-gray-50 rounded p-3 mb-2">
+                <div className="bg-gray-50 rounded p-3 mb-3">
                   <p className="text-sm font-semibold text-gray-900">{deletingUser.fullName}</p>
                   <p className="text-sm text-gray-600">{deletingUser.email}</p>
                   <p className="text-xs text-gray-500 mt-1">Role: {deletingUser.role}</p>
+                  <p className="text-xs text-gray-500">Status: {deletingUser.isActive ? 'Active' : 'Deactivated'}</p>
                 </div>
-                <p className="text-sm text-red-600 font-semibold">
-                  This action cannot be undone and may affect related data.
-                </p>
+                <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mb-2">
+                  <p className="text-sm text-yellow-800">
+                    <span className="font-semibold">Warning:</span> This action cannot be undone. 
+                    If the user has related data (applications, job postings, or evaluations), 
+                    the deletion will fail and you should keep them deactivated instead.
+                  </p>
+                </div>
               </div>
             </div>
 
