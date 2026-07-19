@@ -2,9 +2,6 @@ import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   Star,
-  ClipboardCheck, 
-  Calendar,
-  MessageSquare,
   LogOut,
   Menu,
   X,
@@ -25,9 +22,6 @@ const HiringManagerLayout = () => {
 
   const navItems = [
     { path: '/hiring-manager/shortlist', icon: Star, label: 'Shortlisted' },
-    { path: '/hiring-manager/evaluations', icon: ClipboardCheck, label: 'Evaluations' },
-    { path: '/hiring-manager/interviews', icon: Calendar, label: 'Interviews' },
-    { path: '/hiring-manager/messages', icon: MessageSquare, label: 'Messages' },
   ];
 
   const isActive = (path) => location.pathname.startsWith(path);

@@ -27,7 +27,7 @@ import RecruiterCandidatesPage from './pages/recruiter/RecruiterCandidatesPage';
 
 // Hiring Manager Pages
 import HiringManagerShortlistPage from './pages/hiring-manager/HiringManagerShortlistPage';
-import HiringManagerEvaluationsPage from './pages/hiring-manager/HiringManagerEvaluationsPage';
+import HiringManagerEvaluatePage from './pages/hiring-manager/HiringManagerEvaluatePage';
 
 // Admin Pages
 import AdminUsersPage from './pages/admin/AdminUsersPage';
@@ -87,7 +87,7 @@ function App() {
           }
         >
           <Route path="shortlist" element={<HiringManagerShortlistPage />} />
-          <Route path="evaluations" element={<HiringManagerEvaluationsPage />} />
+          <Route path="evaluate/:interviewId" element={<HiringManagerEvaluatePage />} />
           <Route index element={<Navigate to="shortlist" replace />} />
         </Route>
 
