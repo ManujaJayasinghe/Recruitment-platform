@@ -9,6 +9,7 @@ import {
   X 
 } from 'lucide-react';
 import { useState } from 'react';
+import ChatbotWidget from '../components/ChatbotWidget';
 
 const CandidateLayout = () => {
   const { user, logout } = useAuth();
@@ -122,6 +123,9 @@ const CandidateLayout = () => {
           onClick={() => setSidebarOpen(false)}
         />
       )}
+
+      {/* Chatbot Widget */}
+      <ChatbotWidget />
     </div>
   );
 };

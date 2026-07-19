@@ -9,8 +9,25 @@ using RecruitmentPlatform.Domain.Interfaces;
 using RecruitmentPlatform.Infrastructure.Data;
 using RecruitmentPlatform.Infrastructure.Repositories;
 using RecruitmentPlatform.Infrastructure.Services;
+using Serilog;
+
+// ── Serilog Configuration ─────────────────────────────────────────────────────
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .WriteTo.File(
+        path: "logs/log-.txt",
+        rollingInterval: RollingInterval.Day,
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .CreateLogger();
+
+try
+{
+    Log.Information("Starting RecruitmentPlatform API");
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Use Serilog for logging
+builder.Host.UseSerilog();
 
 // ── Database ──────────────────────────────────────────────────────────────────
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -116,6 +133,10 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 // Prototype limitation: full OAuth consent flow is a future enhancement.
 builder.Services.AddScoped<ICalendarService, GoogleCalendarService>();
 
+// ── AI Service ────────────────────────────────────────────────────────────────
+// AIService provides chatbot responses and interview question generation
+builder.Services.AddScoped<IAIService, AIService>();
+
 // ── Build ─────────────────────────────────────────────────────────────────────
 var app = builder.Build();
 
@@ -136,6 +157,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+// Serilog request logging middleware
+app.UseSerilogRequestLogging();
 
 app.UseHttpsRedirection();
 
@@ -167,3 +191,12 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}

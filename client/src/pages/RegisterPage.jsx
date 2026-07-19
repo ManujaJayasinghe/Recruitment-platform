@@ -26,9 +26,7 @@ const RegisterPage = () => {
       // Redirect based on role
       const roleRoutes = {
         'Candidate': '/candidate/profile',
-        'Recruiter': '/recruiter/dashboard',
-        'HiringManager': '/hiring-manager/dashboard',
-        'Admin': '/admin/dashboard'
+        'Recruiter': '/recruiter/dashboard'
       };
       
       const redirectPath = roleRoutes[userRole] || '/';
@@ -166,7 +164,6 @@ const RegisterPage = () => {
             <div>
               <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
                 Role
-                <span className="ml-2 text-xs text-gray-500">(For demo/testing purposes)</span>
               </label>
               <select
                 id="role"
@@ -178,10 +175,8 @@ const RegisterPage = () => {
                 }`}
               >
                 <option value="">Select a role...</option>
-                <option value="Candidate">Candidate</option>
-                <option value="Recruiter">Recruiter</option>
-                <option value="HiringManager">Hiring Manager</option>
-                <option value="Admin">Admin</option>
+                <option value="Candidate">Candidate - Looking for jobs</option>
+                <option value="Recruiter">Recruiter - Posting jobs</option>
               </select>
               {errors.role && (
                 <p className="mt-1 text-sm text-red-600">{errors.role.message}</p>

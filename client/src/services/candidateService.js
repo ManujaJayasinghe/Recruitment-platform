@@ -108,6 +108,16 @@ const candidateService = {
     const response = await api.patch(`/messages/mark-read/${senderId}`);
     return response.data;
   },
+
+  /**
+   * Send message to AI chatbot
+   * @param {string} message - User message
+   * @returns {Promise} Chatbot response
+   */
+  askChatbot: async (message) => {
+    const response = await api.post('/chatbot/ask', { message });
+    return response.data;
+  },
 };
 
 export default candidateService;

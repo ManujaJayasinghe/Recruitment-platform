@@ -35,6 +35,15 @@ public class AuthController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
             return BadRequest(new { message = "Password must be at least 6 characters." });
 
+        // Validate role - only allow self-registration for Candidate and Recruiter
+        if (request.Role != UserRole.Candidate && request.Role != UserRole.Recruiter)
+        {
+            return BadRequest(new 
+            { 
+                message = "This role cannot be self-registered. Contact an administrator." 
+            });
+        }
+
         var existing = await _uow.Users.FindAsync(u => u.Email == request.Email);
         if (existing.Any())
             return Conflict(new { message = "Email is already registered." });

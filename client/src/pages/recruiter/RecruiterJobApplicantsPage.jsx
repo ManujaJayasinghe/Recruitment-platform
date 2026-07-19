@@ -11,7 +11,8 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  MessageCircle
+  MessageCircle,
+  Sparkles
 } from 'lucide-react';
 import recruiterService from '../../services/recruiterService';
 import InterviewScheduleModal from '../../components/InterviewScheduleModal';
@@ -27,6 +28,8 @@ const RecruiterJobApplicantsPage = () => {
   const [showInterviewModal, setShowInterviewModal] = useState(false);
   const [showMessagePanel, setShowMessagePanel] = useState(false);
   const [selectedApplicant, setSelectedApplicant] = useState(null);
+  const [generatingQuestions, setGeneratingQuestions] = useState(false);
+  const [interviewQuestions, setInterviewQuestions] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -76,6 +79,19 @@ const RecruiterJobApplicantsPage = () => {
   const handleOpenMessages = (applicant) => {
     setSelectedApplicant(applicant);
     setShowMessagePanel(true);
+  };
+
+  const handleGenerateQuestions = async () => {
+    try {
+      setGeneratingQuestions(true);
+      const response = await recruiterService.generateInterviewQuestions(id);
+      setInterviewQuestions(response.questions || []);
+    } catch (error) {
+      console.error('Error generating questions:', error);
+      alert('Failed to generate interview questions: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setGeneratingQuestions(false);
+    }
   };
 
   const getMatchScoreColor = (score) => {
@@ -150,7 +166,7 @@ const RecruiterJobApplicantsPage = () => {
               {jobInfo.title}
             </h1>
             <p className="text-gray-600 mb-4">{jobInfo.department}</p>
-            <div className="flex items-center gap-4 text-sm text-gray-600">
+            <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
               <span className="flex items-center gap-1">
                 <User className="w-4 h-4" />
                 {applicants.length} applicants
@@ -159,6 +175,43 @@ const RecruiterJobApplicantsPage = () => {
                 <Award className="w-4 h-4" />
                 {jobInfo.minExperience}+ years required
               </span>
+            </div>
+
+            {/* Interview Questions Generator */}
+            <div className="border-t border-gray-200 pt-4">
+              <button
+                onClick={handleGenerateQuestions}
+                disabled={generatingQuestions}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium"
+              >
+                {generatingQuestions ? (
+                  <>
+                    <Loader className="w-5 h-5 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-5 h-5" />
+                    Generate Interview Questions
+                  </>
+                )}
+              </button>
+
+              {interviewQuestions && interviewQuestions.length > 0 && (
+                <div className="mt-4 bg-indigo-50 rounded-lg p-4 border border-indigo-200">
+                  <h3 className="font-semibold text-indigo-900 mb-3">AI-Generated Interview Questions</h3>
+                  <ol className="space-y-2">
+                    {interviewQuestions.map((question, index) => (
+                      <li key={index} className="flex gap-3">
+                        <span className="flex-shrink-0 w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                          {index + 1}
+                        </span>
+                        <span className="text-gray-800">{question}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
             </div>
           </div>
         )}
