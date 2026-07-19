@@ -5,7 +5,6 @@ import {
   Briefcase, 
   Users, 
   UserPlus, 
-  MessageSquare,
   LogOut,
   Menu,
   X 
@@ -27,7 +26,6 @@ const RecruiterLayout = () => {
     { path: '/recruiter/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/recruiter/jobs', icon: Briefcase, label: 'Job Postings' },
     { path: '/recruiter/candidates', icon: Users, label: 'Search Candidates' },
-    { path: '/recruiter/messages', icon: MessageSquare, label: 'Messages' },
   ];
 
   const isActive = (path) => location.pathname.startsWith(path);

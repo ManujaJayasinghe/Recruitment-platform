@@ -4,7 +4,6 @@ import {
   User, 
   Briefcase, 
   FileText, 
-  MessageSquare, 
   LogOut,
   Menu,
   X 
@@ -26,7 +25,6 @@ const CandidateLayout = () => {
     { path: '/candidate/profile', icon: User, label: 'My Profile' },
     { path: '/candidate/jobs', icon: Briefcase, label: 'Browse Jobs' },
     { path: '/candidate/applications', icon: FileText, label: 'My Applications' },
-    { path: '/candidate/messages', icon: MessageSquare, label: 'Messages' },
   ];
 
   const isActive = (path) => location.pathname.startsWith(path);
