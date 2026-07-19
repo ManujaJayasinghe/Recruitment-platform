@@ -119,7 +119,7 @@ const CandidateJobsPage = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="w-full">
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Browse Jobs</h1>
         <p className="text-sm sm:text-base text-gray-600 mt-2">Find your next opportunity</p>

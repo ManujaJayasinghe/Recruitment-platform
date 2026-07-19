@@ -141,7 +141,7 @@ const AdminOrganizationsPage = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="w-full">
       {/* Header */}
       <div className="mb-8 flex items-center justify-between">
         <div>

@@ -100,12 +100,12 @@ const AdminAnalyticsPage = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="w-full">
       {/* Header */}
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
         <p className="text-sm sm:text-base text-gray-600 mt-2">
-          Platform insights and recruitment metrics
+          Platform insights and talent metrics
         </p>
       </div>
 

@@ -149,7 +149,7 @@ const RecruiterJobApplicantsPage = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="w-full">
       {/* Header */}
       <div className="mb-4 sm:mb-6">
         <button

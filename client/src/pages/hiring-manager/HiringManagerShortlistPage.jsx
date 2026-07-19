@@ -120,7 +120,7 @@ const HiringManagerShortlistPage = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="w-full">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Shortlisted Candidates</h1>
@@ -183,22 +183,22 @@ const HiringManagerShortlistPage = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Candidate
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Job Title
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Match Score
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Interview Date
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -207,16 +207,16 @@ const HiringManagerShortlistPage = () => {
                 {applications.map((app) => (
                   <tr key={app.id} className="hover:bg-gray-50 transition">
                     {/* Candidate Info */}
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
-                          <User className="w-5 h-5 text-purple-600" />
+                        <div className="flex-shrink-0 h-9 w-9 rounded-full bg-purple-100 flex items-center justify-center">
+                          <User className="w-4 h-4 text-purple-600" />
                         </div>
-                        <div className="ml-4">
+                        <div className="ml-3">
                           <div className="text-sm font-medium text-gray-900">
                             {app.candidateName}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-xs text-gray-500">
                             {app.candidateEmail}
                           </div>
                         </div>
@@ -224,14 +224,14 @@ const HiringManagerShortlistPage = () => {
                     </td>
 
                     {/* Job Title */}
-                    <td className="px-6 py-4">
-                      <div className="flex items-start gap-2">
-                        <Briefcase className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                    <td className="px-3 py-3">
+                      <div className="flex items-start gap-1.5">
+                        <Briefcase className="w-3.5 h-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
                         <div>
                           <div className="text-sm font-medium text-gray-900">
                             {app.jobTitle}
                           </div>
-                          <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                          <div className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
                             <Building className="w-3 h-3" />
                             {app.departmentName}
                           </div>
@@ -240,18 +240,18 @@ const HiringManagerShortlistPage = () => {
                     </td>
 
                     {/* Match Score */}
-                    <td className="px-6 py-4">
+                    <td className="px-3 py-3">
                       {app.matchScore ? (
-                        <div className="space-y-2">
+                        <div className="space-y-1.5">
                           {/* Progress Bar */}
-                          <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                          <div className="w-20 bg-gray-200 rounded-full h-1.5 overflow-hidden">
                             <div
                               className={`h-full ${getMatchScoreBarColor(app.matchScore)} transition-all duration-300`}
                               style={{ width: `${app.matchScore}%` }}
                             />
                           </div>
                           {/* Percentage Badge */}
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${getMatchScoreColor(app.matchScore)}`}>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${getMatchScoreColor(app.matchScore)}`}>
                             <Award className="w-3 h-3 mr-1" />
                             {Math.round(app.matchScore)}%
                           </span>
@@ -262,16 +262,16 @@ const HiringManagerShortlistPage = () => {
                     </td>
 
                     {/* Status */}
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(app.status)}`}>
+                    <td className="px-3 py-3">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${getStatusColor(app.status)}`}>
                         {formatStatus(app.status)}
                       </span>
                     </td>
 
                     {/* Interview Date */}
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                        <Calendar className="w-4 h-4 flex-shrink-0" />
+                    <td className="px-3 py-3">
+                      <div className="flex items-center gap-1 text-sm text-gray-600">
+                        <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
                         <span className="text-xs">
                           {formatDate(app.interviewScheduledAt)}
                         </span>
@@ -279,22 +279,22 @@ const HiringManagerShortlistPage = () => {
                     </td>
 
                     {/* Actions */}
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
                         <button
                           onClick={() => handleReview(app)}
-                          className="inline-flex items-center gap-1.5 px-3 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition"
                           title="Quick evaluation (modal)"
                         >
-                          <FileText className="w-4 h-4" />
+                          <FileText className="w-3.5 h-3.5" />
                           Quick
                         </button>
                         <button
                           onClick={() => handleReviewPage(app)}
-                          className="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-gray-600 text-white text-xs font-medium rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition"
                           title="Full page evaluation"
                         >
-                          <FileText className="w-4 h-4" />
+                          <FileText className="w-3.5 h-3.5" />
                           Full
                         </button>
                       </div>

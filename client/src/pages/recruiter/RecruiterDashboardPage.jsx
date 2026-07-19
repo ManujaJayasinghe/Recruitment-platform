@@ -93,12 +93,12 @@ const RecruiterDashboardPage = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-1 sm:mt-2">Overview of your recruitment activities</p>
+          <p className="text-sm sm:text-base text-gray-600 mt-1 sm:mt-2">Overview of your talent acquisition activities</p>
         </div>
         <button
           onClick={() => navigate('/recruiter/jobs/new')}

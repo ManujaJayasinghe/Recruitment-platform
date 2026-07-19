@@ -102,10 +102,9 @@ const CandidateApplicationsPage = () => {
       Applied: 'bg-blue-100 text-blue-800 border-blue-200',
       Screening: 'bg-yellow-100 text-yellow-800 border-yellow-200',
       Shortlisted: 'bg-purple-100 text-purple-800 border-purple-200',
-      Interview: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-      Offered: 'bg-green-100 text-green-800 border-green-200',
-      Rejected: 'bg-red-100 text-red-800 border-red-200',
-      Withdrawn: 'bg-gray-100 text-gray-800 border-gray-200'
+      InterviewScheduled: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+      Hired: 'bg-green-100 text-green-800 border-green-200',
+      Rejected: 'bg-red-100 text-red-800 border-red-200'
     };
     return statusColors[status] || 'bg-gray-100 text-gray-800 border-gray-200';
   };
@@ -115,10 +114,9 @@ const CandidateApplicationsPage = () => {
       Applied: <FileText className="w-4 h-4" />,
       Screening: <Clock className="w-4 h-4" />,
       Shortlisted: <CheckCircle className="w-4 h-4" />,
-      Interview: <Users className="w-4 h-4" />,
-      Offered: <CheckCircle className="w-4 h-4" />,
-      Rejected: <AlertCircle className="w-4 h-4" />,
-      Withdrawn: <AlertCircle className="w-4 h-4" />
+      InterviewScheduled: <Users className="w-4 h-4" />,
+      Hired: <CheckCircle className="w-4 h-4" />,
+      Rejected: <AlertCircle className="w-4 h-4" />
     };
     return icons[status] || <FileText className="w-4 h-4" />;
   };
@@ -148,13 +146,15 @@ const CandidateApplicationsPage = () => {
       { name: 'Applied', key: 'Applied' },
       { name: 'Screening', key: 'Screening' },
       { name: 'Shortlisted', key: 'Shortlisted' },
-      { name: 'Interview', key: 'Interview' },
-      { name: 'Decision', key: ['Offered', 'Rejected', 'Withdrawn'] }
+      { name: 'Interview', key: 'InterviewScheduled' },
+      { name: 'Decision', key: ['Hired', 'Rejected'] }
     ];
 
     const currentIndex = stages.findIndex(stage => 
       Array.isArray(stage.key) ? stage.key.includes(currentStatus) : stage.key === currentStatus
     );
+
+    const isRejected = currentStatus === 'Rejected';
 
     return (
       <div className="flex items-center justify-between mb-6 px-4">
@@ -162,32 +162,69 @@ const CandidateApplicationsPage = () => {
           const isActive = index === currentIndex;
           const isPast = index < currentIndex;
           const isFuture = index > currentIndex;
+          const isRejectedStage = isRejected && isActive;
           
           return (
             <div key={stage.name} className="flex items-center flex-1">
               {/* Stage Circle */}
-              <div className="flex flex-col items-center flex-1">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm border-2 transition-all ${
-                  isActive 
-                    ? 'bg-indigo-600 text-white border-indigo-600 scale-110' 
-                    : isPast
-                    ? 'bg-green-500 text-white border-green-500'
-                    : 'bg-gray-200 text-gray-500 border-gray-300'
-                }`}>
+              <div className="flex flex-col items-center flex-1 relative">
+                <div 
+                  className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm border-2 transition-all relative ${
+                    isActive && !isRejected
+                      ? 'scale-110' 
+                      : ''
+                  }`}
+                  style={{
+                    backgroundColor: isActive && !isRejected
+                      ? 'var(--accent)'
+                      : isPast || (isActive && isRejected)
+                      ? 'var(--primary)'
+                      : 'transparent',
+                    borderColor: isActive && !isRejected
+                      ? 'var(--accent)'
+                      : isPast || (isActive && isRejected)
+                      ? 'var(--primary)'
+                      : 'var(--border)',
+                    color: isPast || isActive ? 'white' : 'var(--border)',
+                    boxShadow: isActive && !isRejected ? '0 0 0 4px rgba(227, 168, 87, 0.2)' : 'none'
+                  }}
+                >
                   {isPast ? '✓' : index + 1}
                 </div>
-                <span className={`text-xs mt-2 font-medium ${
-                  isActive ? 'text-indigo-600' : isPast ? 'text-green-600' : 'text-gray-500'
-                }`}>
+                
+                {/* Rejection Marker */}
+                {isRejectedStage && (
+                  <div 
+                    className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: 'var(--danger)' }}
+                    title="Application rejected at this stage"
+                  >
+                    <AlertCircle className="w-3 h-3 text-white" />
+                  </div>
+                )}
+                
+                <span 
+                  className="text-xs mt-2 font-medium"
+                  style={{
+                    color: isActive && !isRejected
+                      ? 'var(--accent)'
+                      : isPast || (isActive && isRejected)
+                      ? 'var(--primary)'
+                      : 'var(--border)'
+                  }}
+                >
                   {stage.name}
                 </span>
               </div>
               
               {/* Connector Line */}
               {index < stages.length - 1 && (
-                <div className={`h-0.5 flex-1 mx-2 ${
-                  isPast ? 'bg-green-500' : 'bg-gray-300'
-                }`} />
+                <div 
+                  className="h-0.5 flex-1 mx-2 transition-all"
+                  style={{
+                    backgroundColor: isPast ? 'var(--primary)' : 'var(--border)'
+                  }}
+                />
               )}
             </div>
           );
@@ -211,7 +248,7 @@ const CandidateApplicationsPage = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="w-full">
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">My Applications</h1>
         <p className="text-sm sm:text-base text-gray-600 mt-2">Track the status of your job applications</p>

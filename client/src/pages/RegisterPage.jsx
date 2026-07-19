@@ -49,12 +49,15 @@ const RegisterPage = () => {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-full mb-4">
             <UserPlus className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Recruitment Platform</h1>
-          <p className="text-gray-600 mt-2">Create your account</p>
+          <h1 className="text-3xl font-bold text-gray-900">TalentSync</h1>
+          <p className="text-sm text-gray-500 mt-0.5">AI-Powered Recruitment and Talent Management Platform</p>
         </div>
 
         {/* Register Card */}
         <div className="bg-white rounded-lg shadow-xl p-8">
+          <div className="mb-6">
+            <p className="text-gray-600 text-center">Create your account</p>
+          </div>
           {apiError && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />

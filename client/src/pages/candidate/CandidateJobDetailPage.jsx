@@ -100,7 +100,7 @@ const CandidateJobDetailPage = () => {
 
   if (!job) {
     return (
-      <div className="max-w-4xl mx-auto">
+      <div className="w-full">
         <ErrorMessage
           title="Job not found"
           message="The job you're looking for doesn't exist or has been removed."
@@ -112,7 +112,7 @@ const CandidateJobDetailPage = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="w-full">
       {/* Success Toast */}
       {showSuccess && (
         <div className="fixed top-4 right-4 left-4 sm:left-auto z-50 animate-slide-in">

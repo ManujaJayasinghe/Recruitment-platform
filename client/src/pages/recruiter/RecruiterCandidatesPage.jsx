@@ -116,7 +116,7 @@ const RecruiterCandidatesPage = () => {
   const hasActiveFilters = keyword || selectedSkills.length > 0 || minExperience > 0;
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="w-full">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Search Candidates</h1>
