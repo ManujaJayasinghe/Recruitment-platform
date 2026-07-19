@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RecruitmentPlatform.Application.DTOs.Evaluation;
 using RecruitmentPlatform.Application.DTOs.HiringManager;
+using RecruitmentPlatform.Application.Interfaces;
 using RecruitmentPlatform.Domain.Enums;
 using RecruitmentPlatform.Domain.Interfaces;
 
@@ -14,11 +15,16 @@ namespace RecruitmentPlatform.API.Controllers;
 public class HiringManagerController : ControllerBase
 {
     private readonly IUnitOfWork _uow;
+    private readonly INotificationFactory _notificationFactory;
     private readonly ILogger<HiringManagerController> _logger;
 
-    public HiringManagerController(IUnitOfWork uow, ILogger<HiringManagerController> logger)
+    public HiringManagerController(
+        IUnitOfWork uow,
+        INotificationFactory notificationFactory,
+        ILogger<HiringManagerController> logger)
     {
         _uow = uow;
+        _notificationFactory = notificationFactory;
         _logger = logger;
     }
 
@@ -45,10 +51,16 @@ public class HiringManagerController : ControllerBase
             var profile = await _uow.CandidateProfiles.GetByIdAsync(app.CandidateProfileId);
             var user = profile != null ? await _uow.Users.GetByIdAsync(profile.UserId) : null;
 
+            // Get interview by ApplicationId since navigation property may not be loaded
+            var interviews = await _uow.Interviews.FindAsync(i => i.ApplicationId == app.Id);
+            var interview = interviews.FirstOrDefault();
+
             DateTime? interviewScheduledAt = null;
-            if (app.Interview != null)
+            Guid? interviewId = null;
+            if (interview != null)
             {
-                interviewScheduledAt = app.Interview.ScheduledAt;
+                interviewScheduledAt = interview.ScheduledAt;
+                interviewId = interview.Id;
             }
 
             result.Add(new ShortlistedApplicationResponse
@@ -64,6 +76,7 @@ public class HiringManagerController : ControllerBase
                 MatchScore           = app.MatchScore,
                 AppliedAt            = app.AppliedAt,
                 InterviewScheduledAt = interviewScheduledAt,
+                InterviewId          = interviewId,
             });
         }
 
@@ -87,8 +100,8 @@ public class HiringManagerController : ControllerBase
         if (interview == null)
             return NotFound(new { message = "Interview not found." });
 
-        if (interview.Status != InterviewStatus.Completed)
-            return BadRequest(new { message = "Can only evaluate completed interviews." });
+        // Allow evaluation for scheduled or completed interviews
+        // (removed the status check to allow more flexible evaluation timing)
 
         var evaluation = new Domain.Entities.Evaluation
         {
@@ -147,25 +160,42 @@ public class HiringManagerController : ControllerBase
         application.Status = request.Decision;
         await _uow.SaveChangesAsync();
 
-        // Get candidate info for notification stub
+        // Get candidate info and notify via email
         var profile = await _uow.CandidateProfiles.GetByIdAsync(application.CandidateProfileId);
         var user = profile != null ? await _uow.Users.GetByIdAsync(profile.UserId) : null;
         var job = await _uow.JobPostings.GetByIdAsync(application.JobPostingId);
 
-        // Stub notification - will be implemented in Part 8
-        var decisionText = request.Decision == ApplicationStatus.Hired ? "hired" : "rejected";
-        _logger.LogInformation(
-            "Notification would be sent to candidate {CandidateName} ({Email}): You have been {Decision} for position {JobTitle}",
-            user?.FullName ?? "Unknown",
-            user?.Email ?? "Unknown",
-            decisionText,
-            job?.Title ?? "Unknown");
+        if (user != null)
+        {
+            var emailChannel = _notificationFactory.CreateNotification(NotificationType.Email);
+            var decisionText = request.Decision == ApplicationStatus.Hired ? "hired" : "rejected";
+
+            var subject = request.Decision == ApplicationStatus.Hired
+                ? $"Congratulations! You've been hired — {job?.Title}"
+                : $"Application Update — {job?.Title}";
+
+            var body = request.Decision == ApplicationStatus.Hired
+                ? $"<p>Hi {user.FullName},</p>" +
+                  $"<p>Congratulations! We are thrilled to inform you that you have been <strong>hired</strong> " +
+                  $"for the position of <strong>{job?.Title ?? "the role"}</strong>.</p>" +
+                  $"<p>Our team will reach out shortly with onboarding details. Welcome aboard!</p>"
+                : $"<p>Hi {user.FullName},</p>" +
+                  $"<p>Thank you for your interest in <strong>{job?.Title ?? "the role"}</strong>. " +
+                  $"After careful consideration, we have decided to move forward with other candidates.</p>" +
+                  $"<p>We encourage you to apply for future openings. Best of luck in your search!</p>";
+
+            await emailChannel.SendAsync(user.Email, subject, body);
+
+            _logger.LogInformation(
+                "Decision notification sent to {CandidateName} ({Email}): {Decision} for {JobTitle}",
+                user.FullName, user.Email, decisionText, job?.Title ?? "Unknown");
+        }
 
         return Ok(new
         {
             id = application.Id,
             status = application.Status,
-            message = $"Application status updated to {request.Decision}. Notification logged for candidate."
+            message = $"Application status updated to {request.Decision}. Candidate notified by email."
         });
     }
 

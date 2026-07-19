@@ -8,7 +8,6 @@ namespace RecruitmentPlatform.API.Controllers;
 
 [ApiController]
 [Route("api/admin")]
-[Authorize(Roles = "Admin")]
 public class AdminController : ControllerBase
 {
     private readonly IUnitOfWork _uow;
@@ -22,6 +21,7 @@ public class AdminController : ControllerBase
 
     // GET /api/admin/users
     [HttpGet("users")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetUsers(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
@@ -73,6 +73,7 @@ public class AdminController : ControllerBase
 
     // PATCH /api/admin/users/{id}/role
     [HttpPatch("users/{id:guid}/role")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateUserRole(Guid id, [FromBody] UpdateUserRoleRequest request)
     {
         var user = await _uow.Users.GetByIdAsync(id);
@@ -100,6 +101,7 @@ public class AdminController : ControllerBase
 
     // PATCH /api/admin/users/{id}/status
     [HttpPatch("users/{id:guid}/status")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateUserStatus(Guid id, [FromBody] UpdateUserStatusRequest request)
     {
         var user = await _uow.Users.GetByIdAsync(id);
@@ -136,6 +138,7 @@ public class AdminController : ControllerBase
     // - Evaluations (created by this user)
     // Use sparingly and only when absolutely necessary. Consider soft delete (IsActive = false) instead.
     [HttpDelete("users/{id:guid}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteUser(Guid id)
     {
         var user = await _uow.Users.GetByIdAsync(id);
@@ -187,6 +190,7 @@ public class AdminController : ControllerBase
 
     // POST /api/admin/organizations
     [HttpPost("organizations")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CreateOrganization([FromBody] CreateOrganizationRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Name))
@@ -220,6 +224,7 @@ public class AdminController : ControllerBase
 
     // GET /api/admin/organizations
     [HttpGet("organizations")]
+    [Authorize(Roles = "Admin,Recruiter")]
     public async Task<IActionResult> GetOrganizations()
     {
         var organizations = await _uow.Organizations.GetAllAsync();
@@ -240,6 +245,7 @@ public class AdminController : ControllerBase
 
     // PUT /api/admin/organizations/{id}
     [HttpPut("organizations/{id:guid}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateOrganization(Guid id, [FromBody] UpdateOrganizationRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Name))
@@ -273,6 +279,7 @@ public class AdminController : ControllerBase
 
     // POST /api/admin/departments
     [HttpPost("departments")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CreateDepartment([FromBody] CreateDepartmentRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Name))
@@ -309,6 +316,7 @@ public class AdminController : ControllerBase
 
     // GET /api/admin/departments
     [HttpGet("departments")]
+    [Authorize(Roles = "Admin,Recruiter")]
     public async Task<IActionResult> GetDepartments([FromQuery] Guid? organizationId = null)
     {
         var departments = organizationId.HasValue
@@ -335,6 +343,7 @@ public class AdminController : ControllerBase
 
     // PUT /api/admin/departments/{id}
     [HttpPut("departments/{id:guid}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateDepartment(Guid id, [FromBody] UpdateDepartmentRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Name))

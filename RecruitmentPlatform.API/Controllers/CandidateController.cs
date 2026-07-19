@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
 using RecruitmentPlatform.Application.DTOs.Candidate;
 using RecruitmentPlatform.Domain.Interfaces;
+using RecruitmentPlatform.Infrastructure.Services;
 
 namespace RecruitmentPlatform.API.Controllers;
 
@@ -14,11 +15,19 @@ public class CandidateController : ControllerBase
 {
     private readonly IUnitOfWork _uow;
     private readonly IWebHostEnvironment _env;
+    private readonly ResumeParsingService _resumeParser;
+    private readonly ILogger<CandidateController> _logger;
 
-    public CandidateController(IUnitOfWork uow, IWebHostEnvironment env)
+    public CandidateController(
+        IUnitOfWork uow,
+        IWebHostEnvironment env,
+        ResumeParsingService resumeParser,
+        ILogger<CandidateController> logger)
     {
         _uow = uow;
         _env = env;
+        _resumeParser = resumeParser;
+        _logger = logger;
     }
 
     // GET /api/candidates/me
@@ -114,15 +123,58 @@ public class CandidateController : ControllerBase
         await using (var stream = new FileStream(fullPath, FileMode.Create))
             await file.CopyToAsync(stream);
 
-        // Store relative URL
+        // Store the internal relative path — this is NOT returned to the client as a
+        // downloadable URL. The file is only accessible via GET /api/candidates/me/resume.
         profile.ResumeFileUrl = $"/uploads/resumes/{profile.Id}/{safeFileName}";
         _uow.CandidateProfiles.Update(profile);
         await _uow.SaveChangesAsync();
 
-        return Ok(new { resumeUrl = profile.ResumeFileUrl });
+        // Parse resume using AI (synchronous - response includes parsed data immediately)
+        // If parsing fails, the upload still succeeds but without AI-extracted data
+        var parsingResult = await _resumeParser.ParseAndSaveAsync(profile.Id, fullPath);
+
+        if (parsingResult.Success)
+        {
+            _logger.LogInformation(
+                "Resume uploaded and parsed successfully for candidate {ProfileId}",
+                profile.Id);
+
+            return Ok(new
+            {
+                resumeUrl = profile.ResumeFileUrl,
+                parsed = new
+                {
+                    success = true,
+                    skills = parsingResult.ParsedData?.Skills ?? new List<string>(),
+                    yearsOfExperience = parsingResult.ParsedData?.YearsOfExperience ?? 0,
+                    education = parsingResult.ParsedData?.Education ?? new List<string>(),
+                    summary = parsingResult.ParsedData?.Summary ?? string.Empty
+                }
+            });
+        }
+        else
+        {
+            _logger.LogWarning(
+                "Resume uploaded but parsing failed for candidate {ProfileId}: {Error}",
+                profile.Id, parsingResult.ErrorMessage);
+
+            return Ok(new
+            {
+                resumeUrl = profile.ResumeFileUrl,
+                parsed = new
+                {
+                    success = false,
+                    error = parsingResult.ErrorMessage,
+                    message = "Resume uploaded successfully but AI parsing encountered an error. " +
+                             "You can still manually update your profile."
+                }
+            });
+        }
     }
 
     // GET /api/candidates/me/resume
+    // Security: files are served exclusively through this authenticated endpoint.
+    // Direct access to /uploads/resumes/... is blocked at the static-file middleware level.
     [HttpGet("me/resume")]
     public async Task<IActionResult> DownloadResume()
     {
@@ -136,16 +188,24 @@ public class CandidateController : ControllerBase
         if (string.IsNullOrEmpty(profile.ResumeFileUrl))
             return NotFound(new { message = "No resume uploaded yet." });
 
-        // ResumeFileUrl is a relative path like /uploads/resumes/{id}/file.pdf
-        var fullPath = Path.Combine(_env.WebRootPath, profile.ResumeFileUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
-        if (!System.IO.File.Exists(fullPath))
+        // Build the absolute disk path from the stored relative URL
+        var relativePath = profile.ResumeFileUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+        var fullPath     = Path.Combine(_env.WebRootPath, relativePath);
+
+        // Path traversal guard — ensure the resolved path stays inside wwwroot/uploads/resumes
+        var uploadsRoot = Path.GetFullPath(Path.Combine(_env.WebRootPath, "uploads", "resumes"));
+        var resolvedPath = Path.GetFullPath(fullPath);
+        if (!resolvedPath.StartsWith(uploadsRoot, StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { message = "Invalid file path." });
+
+        if (!System.IO.File.Exists(resolvedPath))
             return NotFound(new { message = "Resume file not found on server." });
 
-        new FileExtensionContentTypeProvider().TryGetContentType(fullPath, out var contentType);
+        new FileExtensionContentTypeProvider().TryGetContentType(resolvedPath, out var contentType);
         contentType ??= "application/octet-stream";
 
-        var stream   = new FileStream(fullPath, FileMode.Open, FileAccess.Read);
-        var fileName = Path.GetFileName(fullPath);
+        var stream   = new FileStream(resolvedPath, FileMode.Open, FileAccess.Read);
+        var fileName = Path.GetFileName(resolvedPath);
         return File(stream, contentType, fileName);
     }
 
@@ -168,6 +228,9 @@ public class CandidateController : ControllerBase
         Summary           = profile.Summary,
         Skills            = profile.Skills,
         YearsOfExperience = profile.YearsOfExperience,
-        ResumeFileUrl     = profile.ResumeFileUrl,
+        // Raw storage path is never returned — client checks HasResume
+        // and calls GET /api/candidates/me/resume to download.
+        HasResume         = !string.IsNullOrEmpty(profile.ResumeFileUrl),
+        ParsedResumeJson  = profile.ParsedResumeJson,
     };
 }
