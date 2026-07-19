@@ -291,8 +291,6 @@ namespace RecruitmentPlatform.Infrastructure.Migrations
                     b.ToTable("SkillAssessments");
                 });
 
-<<<<<<< HEAD
-=======
             modelBuilder.Entity("RecruitmentPlatform.Domain.Entities.SmsLog", b =>
                 {
                     b.Property<Guid>("Id")
@@ -315,7 +313,6 @@ namespace RecruitmentPlatform.Infrastructure.Migrations
                     b.ToTable("SmsLogs");
                 });
 
->>>>>>> dc5eb2e (Initial frontend commit)
             modelBuilder.Entity("RecruitmentPlatform.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")

@@ -17,6 +17,11 @@ const LoginPage = () => {
       setApiError('');
       
       const response = await login(data);
+      console.log('Login response:', response);
+      
+      // Handle both camelCase and PascalCase from API
+      const userRole = response.role || response.Role;
+      console.log('User role:', userRole);
       
       // Redirect based on role
       const roleRoutes = {
@@ -26,9 +31,11 @@ const LoginPage = () => {
         'Admin': '/admin/dashboard'
       };
       
-      const redirectPath = roleRoutes[response.role] || '/';
-      navigate(redirectPath);
+      const redirectPath = roleRoutes[userRole] || '/';
+      console.log('Redirecting to:', redirectPath);
+      navigate(redirectPath, { replace: true });
     } catch (error) {
+      console.error('Login error:', error);
       const message = error.response?.data?.message || 
                       error.response?.data?.error ||
                       'Invalid email or password';

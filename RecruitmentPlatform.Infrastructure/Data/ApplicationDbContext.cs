@@ -22,10 +22,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Evaluation> Evaluations => Set<Evaluation>();
     public DbSet<SkillAssessment> SkillAssessments => Set<SkillAssessment>();
     public DbSet<Message> Messages => Set<Message>();
-<<<<<<< HEAD
-=======
     public DbSet<SmsLog>  SmsLogs  => Set<SmsLog>();
->>>>>>> dc5eb2e (Initial frontend commit)
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

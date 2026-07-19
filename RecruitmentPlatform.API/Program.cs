@@ -53,8 +53,25 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+// ── CORS ──────────────────────────────────────────────────────────────────────
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+});
+
 // ── Controllers & Swagger ─────────────────────────────────────────────────────
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Serialize enums as strings instead of integers
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -83,8 +100,6 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
 
-<<<<<<< HEAD
-=======
 // ── Notification Services (Factory Pattern) ───────────────────────────────────
 // EmailNotificationChannel reads Mailtrap config from IConfiguration.
 // Mailtrap:Username and Mailtrap:Password must be set via dotnet user-secrets (never committed to source):
@@ -101,7 +116,6 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 // Prototype limitation: full OAuth consent flow is a future enhancement.
 builder.Services.AddScoped<ICalendarService, GoogleCalendarService>();
 
->>>>>>> dc5eb2e (Initial frontend commit)
 // ── Build ─────────────────────────────────────────────────────────────────────
 var app = builder.Build();
 
@@ -124,9 +138,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-<<<<<<< HEAD
-app.UseStaticFiles();
-=======
 
 // Static file serving — intentionally scoped to exclude /uploads.
 // Resume files must ONLY be accessed via the authenticated API endpoint
@@ -149,7 +160,8 @@ app.UseStaticFiles(new StaticFileOptions
         }
     }
 });
->>>>>>> dc5eb2e (Initial frontend commit)
+
+app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

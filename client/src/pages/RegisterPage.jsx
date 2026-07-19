@@ -20,6 +20,9 @@ const RegisterPage = () => {
       
       const response = await registerUser(data);
       
+      // Handle both camelCase and PascalCase from API
+      const userRole = response.role || response.Role;
+      
       // Redirect based on role
       const roleRoutes = {
         'Candidate': '/candidate/profile',
@@ -28,8 +31,8 @@ const RegisterPage = () => {
         'Admin': '/admin/dashboard'
       };
       
-      const redirectPath = roleRoutes[response.role] || '/';
-      navigate(redirectPath);
+      const redirectPath = roleRoutes[userRole] || '/';
+      navigate(redirectPath, { replace: true });
     } catch (error) {
       const message = error.response?.data?.message || 
                       error.response?.data?.error ||

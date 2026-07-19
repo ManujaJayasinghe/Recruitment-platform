@@ -5,9 +5,6 @@ public class CreateInterviewRequest
     public Guid     ApplicationId   { get; set; }
     public DateTime ScheduledAt     { get; set; }
     public int      DurationMinutes { get; set; }
-<<<<<<< HEAD
-    public string?  MeetingLink     { get; set; }
-=======
 
     /// <summary>
     /// Optional: manually supplied meeting link.
@@ -24,5 +21,4 @@ public class CreateInterviewRequest
     /// This field is NOT persisted — it is used only during the request lifecycle.
     /// </summary>
     public string?  CalendarToken   { get; set; }
->>>>>>> dc5eb2e (Initial frontend commit)
 }

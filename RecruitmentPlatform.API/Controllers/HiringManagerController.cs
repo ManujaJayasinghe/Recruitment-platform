@@ -3,10 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RecruitmentPlatform.Application.DTOs.Evaluation;
 using RecruitmentPlatform.Application.DTOs.HiringManager;
-<<<<<<< HEAD
-=======
 using RecruitmentPlatform.Application.Interfaces;
->>>>>>> dc5eb2e (Initial frontend commit)
 using RecruitmentPlatform.Domain.Enums;
 using RecruitmentPlatform.Domain.Interfaces;
 
@@ -17,15 +14,6 @@ namespace RecruitmentPlatform.API.Controllers;
 [Authorize(Roles = "HiringManager")]
 public class HiringManagerController : ControllerBase
 {
-<<<<<<< HEAD
-    private readonly IUnitOfWork _uow;
-    private readonly ILogger<HiringManagerController> _logger;
-
-    public HiringManagerController(IUnitOfWork uow, ILogger<HiringManagerController> logger)
-    {
-        _uow = uow;
-        _logger = logger;
-=======
     private readonly IUnitOfWork                       _uow;
     private readonly INotificationService              _notifications;
     private readonly ILogger<HiringManagerController>  _logger;
@@ -38,7 +26,6 @@ public class HiringManagerController : ControllerBase
         _uow           = uow;
         _notifications = notifications;
         _logger        = logger;
->>>>>>> dc5eb2e (Initial frontend commit)
     }
 
     // GET /api/hiring-manager/shortlisted
@@ -166,21 +153,6 @@ public class HiringManagerController : ControllerBase
         application.Status = request.Decision;
         await _uow.SaveChangesAsync();
 
-<<<<<<< HEAD
-        // Get candidate info for notification stub
-        var profile = await _uow.CandidateProfiles.GetByIdAsync(application.CandidateProfileId);
-        var user = profile != null ? await _uow.Users.GetByIdAsync(profile.UserId) : null;
-        var job = await _uow.JobPostings.GetByIdAsync(application.JobPostingId);
-
-        // Stub notification - will be implemented in Part 8
-        var decisionText = request.Decision == ApplicationStatus.Hired ? "hired" : "rejected";
-        _logger.LogInformation(
-            "Notification would be sent to candidate {CandidateName} ({Email}): You have been {Decision} for position {JobTitle}",
-            user?.FullName ?? "Unknown",
-            user?.Email ?? "Unknown",
-            decisionText,
-            job?.Title ?? "Unknown");
-=======
         // Get candidate info for notification
         var profile = await _uow.CandidateProfiles.GetByIdAsync(application.CandidateProfileId);
         var user    = profile != null ? await _uow.Users.GetByIdAsync(profile.UserId) : null;
@@ -208,17 +180,12 @@ public class HiringManagerController : ControllerBase
                 "[HiringManagerController] Could not send notification for application {ApplicationId} — candidate or job data missing.",
                 id);
         }
->>>>>>> dc5eb2e (Initial frontend commit)
 
         return Ok(new
         {
             id = application.Id,
             status = application.Status,
-<<<<<<< HEAD
-            message = $"Application status updated to {request.Decision}. Notification logged for candidate."
-=======
             message = $"Application status updated to {request.Decision}. Notification sent to candidate."
->>>>>>> dc5eb2e (Initial frontend commit)
         });
     }
 

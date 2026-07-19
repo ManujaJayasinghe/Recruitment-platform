@@ -13,20 +13,29 @@ const authService = {
   register: async (data) => {
     const response = await api.post('/auth/register', data);
     
+    // Handle both camelCase and PascalCase from API
+    const userData = {
+      token: response.data.token || response.data.Token,
+      userId: response.data.userId || response.data.UserId,
+      fullName: response.data.fullName || response.data.FullName,
+      role: response.data.role || response.data.Role,
+      expiresAt: response.data.expiresAt || response.data.ExpiresAt
+    };
+    
     // Store token and user info in localStorage
-    if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('userId', response.data.userId);
-      localStorage.setItem('role', response.data.role);
+    if (userData.token) {
+      localStorage.setItem('token', userData.token);
+      localStorage.setItem('userId', userData.userId);
+      localStorage.setItem('role', userData.role);
       localStorage.setItem('user', JSON.stringify({
-        userId: response.data.userId,
-        fullName: response.data.fullName,
-        role: response.data.role,
-        expiresAt: response.data.expiresAt,
+        userId: userData.userId,
+        fullName: userData.fullName,
+        role: userData.role,
+        expiresAt: userData.expiresAt,
       }));
     }
     
-    return response.data;
+    return userData;
   },
 
   /**
@@ -39,20 +48,29 @@ const authService = {
   login: async (data) => {
     const response = await api.post('/auth/login', data);
     
+    // Handle both camelCase and PascalCase from API
+    const userData = {
+      token: response.data.token || response.data.Token,
+      userId: response.data.userId || response.data.UserId,
+      fullName: response.data.fullName || response.data.FullName,
+      role: response.data.role || response.data.Role,
+      expiresAt: response.data.expiresAt || response.data.ExpiresAt
+    };
+    
     // Store token and user info in localStorage
-    if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('userId', response.data.userId);
-      localStorage.setItem('role', response.data.role);
+    if (userData.token) {
+      localStorage.setItem('token', userData.token);
+      localStorage.setItem('userId', userData.userId);
+      localStorage.setItem('role', userData.role);
       localStorage.setItem('user', JSON.stringify({
-        userId: response.data.userId,
-        fullName: response.data.fullName,
-        role: response.data.role,
-        expiresAt: response.data.expiresAt,
+        userId: userData.userId,
+        fullName: userData.fullName,
+        role: userData.role,
+        expiresAt: userData.expiresAt,
       }));
     }
     
-    return response.data;
+    return userData;
   },
 
   /**
