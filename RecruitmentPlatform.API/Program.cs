@@ -108,8 +108,25 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+// ── CORS ──────────────────────────────────────────────────────────────────────
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+});
+
 // ── Controllers & Swagger ─────────────────────────────────────────────────────
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Serialize enums as strings instead of integers
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -180,6 +197,26 @@ builder.Services.AddScoped<INotificationFactory, NotificationFactory>();
 // ── Calendar Integration ──────────────────────────────────────────────────────
 builder.Services.AddScoped<ICalendarService, GoogleCalendarService>();
 
+// ── Notification Services (Factory Pattern) ───────────────────────────────────
+// EmailNotificationChannel reads Mailtrap config from IConfiguration.
+// Mailtrap:Username and Mailtrap:Password must be set via dotnet user-secrets (never committed to source):
+//   dotnet user-secrets set "Mailtrap:Username" "your-mailtrap-username"
+//   dotnet user-secrets set "Mailtrap:Password" "your-mailtrap-password"
+builder.Services.AddScoped<EmailNotificationChannel>();
+builder.Services.AddScoped<SmsNotificationChannel>();
+builder.Services.AddScoped<INotificationFactory, NotificationFactory>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
+// ── Calendar Service ──────────────────────────────────────────────────────────
+// GoogleCalendarService uses a recruiter-supplied OAuth access token per request.
+// No server-side credentials are needed — the token is passed in the request body.
+// Prototype limitation: full OAuth consent flow is a future enhancement.
+builder.Services.AddScoped<ICalendarService, GoogleCalendarService>();
+
+// ── AI Service ────────────────────────────────────────────────────────────────
+// AIService provides chatbot responses and interview question generation
+builder.Services.AddScoped<IAIService, AIService>();
+
 // ── Build ─────────────────────────────────────────────────────────────────────
 var app = builder.Build();
 
@@ -221,6 +258,9 @@ if (app.Environment.IsDevelopment())
         c.DisplayRequestDuration();
     });
 }
+
+// Serilog request logging middleware
+app.UseSerilogRequestLogging();
 
 app.UseHttpsRedirection();
 

@@ -57,13 +57,42 @@ public class InterviewController : ControllerBase
         if (application.Interview != null)
             return BadRequest(new { message = "Interview already scheduled for this application." });
 
+        // ── Google Calendar integration ───────────────────────────────────────
+        // If the recruiter supplies a CalendarToken, create a Google Calendar event
+        // and use the returned Meet link as the MeetingLink. This is an optional
+        // step — the interview is still created if the Calendar call fails or is skipped.
+        //
+        // Prototype note: the token is a manually obtained OAuth access token from
+        // https://developers.google.com/oauthplayground (scope: calendar.events).
+        // A full OAuth consent flow is documented as a future enhancement.
+        string? resolvedMeetingLink = request.MeetingLink; // default: use the manually supplied link
+
+        if (!string.IsNullOrWhiteSpace(request.CalendarToken))
+        {
+            // Fetch candidate email for the calendar invite attendee list
+            var candidateProfileForCalendar = await _uow.CandidateProfiles.GetByIdAsync(application.CandidateProfileId);
+            var candidateUserForCalendar    = candidateProfileForCalendar != null
+                ? await _uow.Users.GetByIdAsync(candidateProfileForCalendar.UserId)
+                : null;
+
+            var calendarLink = await _calendar.CreateEventAsync(
+                recruiterGoogleToken: request.CalendarToken,
+                title:                $"Interview: {job.Title}",
+                start:                request.ScheduledAt,
+                durationMinutes:      request.DurationMinutes,
+                attendeeEmail:        candidateUserForCalendar?.Email ?? string.Empty);
+
+            if (calendarLink != null)
+                resolvedMeetingLink = calendarLink;
+        }
+
         var interview = new Domain.Entities.Interview
         {
             Id              = Guid.NewGuid(),
             ApplicationId   = request.ApplicationId,
             ScheduledAt     = request.ScheduledAt,
             DurationMinutes = request.DurationMinutes,
-            MeetingLink     = request.MeetingLink,
+            MeetingLink     = resolvedMeetingLink,
             Status          = InterviewStatus.Scheduled,
         };
 

@@ -123,7 +123,8 @@ public class CandidateController : ControllerBase
         await using (var stream = new FileStream(fullPath, FileMode.Create))
             await file.CopyToAsync(stream);
 
-        // Store relative URL
+        // Store the internal relative path — this is NOT returned to the client as a
+        // downloadable URL. The file is only accessible via GET /api/candidates/me/resume.
         profile.ResumeFileUrl = $"/uploads/resumes/{profile.Id}/{safeFileName}";
         _uow.CandidateProfiles.Update(profile);
         await _uow.SaveChangesAsync();
@@ -172,6 +173,8 @@ public class CandidateController : ControllerBase
     }
 
     // GET /api/candidates/me/resume
+    // Security: files are served exclusively through this authenticated endpoint.
+    // Direct access to /uploads/resumes/... is blocked at the static-file middleware level.
     [HttpGet("me/resume")]
     public async Task<IActionResult> DownloadResume()
     {
@@ -185,16 +188,24 @@ public class CandidateController : ControllerBase
         if (string.IsNullOrEmpty(profile.ResumeFileUrl))
             return NotFound(new { message = "No resume uploaded yet." });
 
-        // ResumeFileUrl is a relative path like /uploads/resumes/{id}/file.pdf
-        var fullPath = Path.Combine(_env.WebRootPath, profile.ResumeFileUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
-        if (!System.IO.File.Exists(fullPath))
+        // Build the absolute disk path from the stored relative URL
+        var relativePath = profile.ResumeFileUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+        var fullPath     = Path.Combine(_env.WebRootPath, relativePath);
+
+        // Path traversal guard — ensure the resolved path stays inside wwwroot/uploads/resumes
+        var uploadsRoot = Path.GetFullPath(Path.Combine(_env.WebRootPath, "uploads", "resumes"));
+        var resolvedPath = Path.GetFullPath(fullPath);
+        if (!resolvedPath.StartsWith(uploadsRoot, StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { message = "Invalid file path." });
+
+        if (!System.IO.File.Exists(resolvedPath))
             return NotFound(new { message = "Resume file not found on server." });
 
-        new FileExtensionContentTypeProvider().TryGetContentType(fullPath, out var contentType);
+        new FileExtensionContentTypeProvider().TryGetContentType(resolvedPath, out var contentType);
         contentType ??= "application/octet-stream";
 
-        var stream   = new FileStream(fullPath, FileMode.Open, FileAccess.Read);
-        var fileName = Path.GetFileName(fullPath);
+        var stream   = new FileStream(resolvedPath, FileMode.Open, FileAccess.Read);
+        var fileName = Path.GetFileName(resolvedPath);
         return File(stream, contentType, fileName);
     }
 
@@ -217,6 +228,9 @@ public class CandidateController : ControllerBase
         Summary           = profile.Summary,
         Skills            = profile.Skills,
         YearsOfExperience = profile.YearsOfExperience,
-        ResumeFileUrl     = profile.ResumeFileUrl,
+        // Raw storage path is never returned — client checks HasResume
+        // and calls GET /api/candidates/me/resume to download.
+        HasResume         = !string.IsNullOrEmpty(profile.ResumeFileUrl),
+        ParsedResumeJson  = profile.ParsedResumeJson,
     };
 }

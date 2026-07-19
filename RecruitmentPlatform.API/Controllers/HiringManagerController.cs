@@ -51,10 +51,16 @@ public class HiringManagerController : ControllerBase
             var profile = await _uow.CandidateProfiles.GetByIdAsync(app.CandidateProfileId);
             var user = profile != null ? await _uow.Users.GetByIdAsync(profile.UserId) : null;
 
+            // Get interview by ApplicationId since navigation property may not be loaded
+            var interviews = await _uow.Interviews.FindAsync(i => i.ApplicationId == app.Id);
+            var interview = interviews.FirstOrDefault();
+
             DateTime? interviewScheduledAt = null;
-            if (app.Interview != null)
+            Guid? interviewId = null;
+            if (interview != null)
             {
-                interviewScheduledAt = app.Interview.ScheduledAt;
+                interviewScheduledAt = interview.ScheduledAt;
+                interviewId = interview.Id;
             }
 
             result.Add(new ShortlistedApplicationResponse
@@ -70,6 +76,7 @@ public class HiringManagerController : ControllerBase
                 MatchScore           = app.MatchScore,
                 AppliedAt            = app.AppliedAt,
                 InterviewScheduledAt = interviewScheduledAt,
+                InterviewId          = interviewId,
             });
         }
 
@@ -93,8 +100,8 @@ public class HiringManagerController : ControllerBase
         if (interview == null)
             return NotFound(new { message = "Interview not found." });
 
-        if (interview.Status != InterviewStatus.Completed)
-            return BadRequest(new { message = "Can only evaluate completed interviews." });
+        // Allow evaluation for scheduled or completed interviews
+        // (removed the status check to allow more flexible evaluation timing)
 
         var evaluation = new Domain.Entities.Evaluation
         {

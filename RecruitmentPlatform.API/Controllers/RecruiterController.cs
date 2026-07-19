@@ -143,6 +143,35 @@ public class RecruiterController : ControllerBase
             .ToList());
     }
 
+    // GET /api/recruiter/jobs/{id}
+    [HttpGet("jobs/{id:guid}")]
+    public async Task<IActionResult> GetJobById(Guid id)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var job = await _uow.JobPostings.GetByIdAsync(id);
+        if (job == null) return NotFound(new { message = "Job posting not found." });
+        if (job.PostedByUserId != userId.Value) return Forbid();
+
+        var dept = await _uow.Departments.GetByIdAsync(job.DepartmentId);
+        var apps = await _uow.Applications.FindAsync(a => a.JobPostingId == job.Id);
+
+        return Ok(new
+        {
+            id = job.Id,
+            title = job.Title,
+            description = job.Description,
+            requiredSkills = job.RequiredSkills,
+            minExperience = job.MinExperience,
+            departmentId = job.DepartmentId,
+            department = dept?.Name ?? "Unknown",
+            status = job.Status.ToString(),
+            createdAt = job.CreatedAt,
+            applicationCount = apps.Count()
+        });
+    }
+
     // DELETE /api/recruiter/jobs/{id}
     // Hard delete — blocks if applications exist; use PATCH status=Closed instead.
     [HttpDelete("jobs/{id:guid}")]
@@ -400,6 +429,42 @@ Generate 5 interview questions for this position.";
             TotalCount = filtered.Count,
             Items      = items,
         });
+    }
+
+    // POST /api/recruiter/jobs/{id}/generate-interview-questions
+    [HttpPost("jobs/{id:guid}/generate-interview-questions")]
+    public async Task<IActionResult> GenerateInterviewQuestions(Guid id)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var job = await _uow.JobPostings.GetByIdAsync(id);
+        if (job == null)
+            return NotFound(new { message = "Job posting not found." });
+
+        // Verify the recruiter owns this job
+        if (job.PostedByUserId != userId.Value)
+            return Forbid();
+
+        try
+        {
+            var questions = await _aiService.GenerateInterviewQuestionsAsync(
+                job.Title,
+                job.Description,
+                job.RequiredSkills,
+                "gpt-4-mini"
+            );
+
+            return Ok(new { questions });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new 
+            { 
+                message = "Failed to generate interview questions.",
+                error = ex.Message 
+            });
+        }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

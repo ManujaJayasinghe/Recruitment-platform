@@ -69,11 +69,23 @@ public class ApplicationController : ControllerBase
 
         var applications = await _uow.Applications.FindAsync(a => a.CandidateProfileId == profile.Id);
         var jobs         = await _uow.JobPostings.GetAllAsync();
-        var jobMap       = jobs.ToDictionary(j => j.Id, j => j.Title);
+        var departments  = await _uow.Departments.GetAllAsync();
+        
+        var jobMap  = jobs.ToDictionary(j => j.Id);
+        var deptMap = departments.ToDictionary(d => d.Id, d => d.Name);
 
         var result = applications
             .OrderByDescending(a => a.AppliedAt)
-            .Select(a => MapToResponse(a, jobMap.GetValueOrDefault(a.JobPostingId, "Unknown")))
+            .Select(a =>
+            {
+                var job = jobMap.GetValueOrDefault(a.JobPostingId);
+                var response = MapToResponse(a, job?.Title ?? "Unknown");
+                if (job != null)
+                {
+                    response.Department = deptMap.GetValueOrDefault(job.DepartmentId, "Unknown");
+                }
+                return response;
+            })
             .ToList();
 
         return Ok(result);
