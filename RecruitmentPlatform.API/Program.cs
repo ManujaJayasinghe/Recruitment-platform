@@ -82,6 +82,13 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
+builder.Services.AddSingleton<IAIService, OpenAIService>();
+builder.Services.AddScoped<ResumeParsingService>();
+
+// Candidate ranking strategies - swap implementation here to change strategy
+// Options: EmbeddingMatchStrategy (default, AI-powered) or KeywordMatchStrategy (simple keyword overlap)
+builder.Services.AddScoped<ICandidateRankingStrategy, EmbeddingMatchStrategy>();
+builder.Services.AddScoped<RankingService>();
 
 // ── Build ─────────────────────────────────────────────────────────────────────
 var app = builder.Build();

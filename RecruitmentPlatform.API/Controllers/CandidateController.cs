@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
 using RecruitmentPlatform.Application.DTOs.Candidate;
 using RecruitmentPlatform.Domain.Interfaces;
+using RecruitmentPlatform.Infrastructure.Services;
 
 namespace RecruitmentPlatform.API.Controllers;
 
@@ -14,11 +15,19 @@ public class CandidateController : ControllerBase
 {
     private readonly IUnitOfWork _uow;
     private readonly IWebHostEnvironment _env;
+    private readonly ResumeParsingService _resumeParser;
+    private readonly ILogger<CandidateController> _logger;
 
-    public CandidateController(IUnitOfWork uow, IWebHostEnvironment env)
+    public CandidateController(
+        IUnitOfWork uow,
+        IWebHostEnvironment env,
+        ResumeParsingService resumeParser,
+        ILogger<CandidateController> logger)
     {
         _uow = uow;
         _env = env;
+        _resumeParser = resumeParser;
+        _logger = logger;
     }
 
     // GET /api/candidates/me
@@ -119,7 +128,47 @@ public class CandidateController : ControllerBase
         _uow.CandidateProfiles.Update(profile);
         await _uow.SaveChangesAsync();
 
-        return Ok(new { resumeUrl = profile.ResumeFileUrl });
+        // Parse resume using AI (synchronous - response includes parsed data immediately)
+        // If parsing fails, the upload still succeeds but without AI-extracted data
+        var parsingResult = await _resumeParser.ParseAndSaveAsync(profile.Id, fullPath);
+
+        if (parsingResult.Success)
+        {
+            _logger.LogInformation(
+                "Resume uploaded and parsed successfully for candidate {ProfileId}",
+                profile.Id);
+
+            return Ok(new
+            {
+                resumeUrl = profile.ResumeFileUrl,
+                parsed = new
+                {
+                    success = true,
+                    skills = parsingResult.ParsedData?.Skills ?? new List<string>(),
+                    yearsOfExperience = parsingResult.ParsedData?.YearsOfExperience ?? 0,
+                    education = parsingResult.ParsedData?.Education ?? new List<string>(),
+                    summary = parsingResult.ParsedData?.Summary ?? string.Empty
+                }
+            });
+        }
+        else
+        {
+            _logger.LogWarning(
+                "Resume uploaded but parsing failed for candidate {ProfileId}: {Error}",
+                profile.Id, parsingResult.ErrorMessage);
+
+            return Ok(new
+            {
+                resumeUrl = profile.ResumeFileUrl,
+                parsed = new
+                {
+                    success = false,
+                    error = parsingResult.ErrorMessage,
+                    message = "Resume uploaded successfully but AI parsing encountered an error. " +
+                             "You can still manually update your profile."
+                }
+            });
+        }
     }
 
     // GET /api/candidates/me/resume
