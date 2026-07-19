@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Calendar, Clock, Video, Loader, AlertCircle } from 'lucide-react';
 import interviewService from '../services/interviewService';
 
@@ -11,6 +11,8 @@ const InterviewScheduleModal = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const modalRef = useRef(null);
+  const closeButtonRef = useRef(null);
   
   // Form state
   const [scheduledDate, setScheduledDate] = useState('');
@@ -19,6 +21,59 @@ const InterviewScheduleModal = ({
   const [meetingLink, setMeetingLink] = useState('');
   const [calendarToken, setCalendarToken] = useState('');
   const [useCalendarIntegration, setUseCalendarIntegration] = useState(false);
+
+  // Handle Escape key
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isOpen && !loading) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      // Focus the close button when modal opens
+      closeButtonRef.current?.focus();
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen, loading, onClose]);
+
+  // Trap focus within modal
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const modal = modalRef.current;
+    if (!modal) return;
+
+    const focusableElements = modal.querySelectorAll(
+      'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    );
+
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+
+    const handleTabKey = (e) => {
+      if (e.key !== 'Tab') return;
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement.focus();
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement.focus();
+        }
+      }
+    };
+
+    modal.addEventListener('keydown', handleTabKey);
+    return () => modal.removeEventListener('keydown', handleTabKey);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -84,16 +139,26 @@ const InterviewScheduleModal = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+    >
+      <div 
+        ref={modalRef}
+        className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white">
-          <h3 className="text-xl font-semibold text-gray-900">
+          <h3 id="modal-title" className="text-xl font-semibold text-gray-900">
             Schedule Interview
           </h3>
           <button
+            ref={closeButtonRef}
             onClick={onClose}
             disabled={loading}
+            aria-label="Close modal"
             className="text-gray-400 hover:text-gray-600 transition disabled:opacity-50"
           >
             <X className="w-6 h-6" />

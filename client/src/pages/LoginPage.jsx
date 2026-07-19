@@ -27,8 +27,8 @@ const LoginPage = () => {
       const roleRoutes = {
         'Candidate': '/candidate/profile',
         'Recruiter': '/recruiter/dashboard',
-        'HiringManager': '/hiring-manager/dashboard',
-        'Admin': '/admin/dashboard'
+        'HiringManager': '/hiring-manager/shortlist',
+        'Admin': '/admin/users'
       };
       
       const redirectPath = roleRoutes[userRole] || '/';
@@ -45,6 +45,13 @@ const LoginPage = () => {
     }
   };
 
+  // Clear error when user starts typing
+  const handleInputChange = () => {
+    if (apiError) {
+      setApiError('');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -53,12 +60,15 @@ const LoginPage = () => {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-full mb-4">
             <LogIn className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Recruitment Platform</h1>
-          <p className="text-gray-600 mt-2">Sign in to your account</p>
+          <h1 className="text-3xl font-bold text-gray-900">TalentSync</h1>
+          <p className="text-sm text-gray-500 mt-0.5">AI-Powered Recruitment and Talent Management Platform</p>
         </div>
 
         {/* Login Card */}
         <div className="bg-white rounded-lg shadow-xl p-8">
+          <div className="mb-6">
+            <p className="text-gray-600 text-center">Sign in to your account</p>
+          </div>
           {apiError && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
@@ -82,6 +92,10 @@ const LoginPage = () => {
                     message: 'Invalid email address'
                   }
                 })}
+                onChange={(e) => {
+                  handleInputChange();
+                  register('email').onChange(e);
+                }}
                 className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition ${
                   errors.email ? 'border-red-500' : 'border-gray-300'
                 }`}
@@ -107,6 +121,10 @@ const LoginPage = () => {
                     message: 'Password must be at least 6 characters'
                   }
                 })}
+                onChange={(e) => {
+                  handleInputChange();
+                  register('password').onChange(e);
+                }}
                 className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition ${
                   errors.password ? 'border-red-500' : 'border-gray-300'
                 }`}

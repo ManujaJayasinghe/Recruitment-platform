@@ -100,17 +100,17 @@ const AdminAnalyticsPage = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="w-full">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
-        <p className="text-gray-600 mt-2">
-          Platform insights and recruitment metrics
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
+        <p className="text-sm sm:text-base text-gray-600 mt-2">
+          Platform insights and talent metrics
         </p>
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
           <div className="flex items-center justify-between">
             <div>
@@ -161,13 +161,15 @@ const AdminAnalyticsPage = () => {
       </div>
 
       {/* Charts Row 1 - Applications Over Time */}
-      <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-        <div className="flex items-center gap-2 mb-6">
+      <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-6 sm:mb-8">
+        <div className="flex items-center gap-2 mb-4 sm:mb-6">
           <Calendar className="w-5 h-5 text-purple-600" />
-          <h2 className="text-xl font-bold text-gray-900">Applications Over Time</h2>
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900">Applications Over Time</h2>
         </div>
         {applicationsOverTime.length > 0 ? (
-          <ResponsiveContainer width="100%" height={300}>
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <div className="min-w-[500px]">
+              <ResponsiveContainer width="100%" height={300}>
             <LineChart data={applicationsOverTime}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis
@@ -195,6 +197,8 @@ const AdminAnalyticsPage = () => {
               />
             </LineChart>
           </ResponsiveContainer>
+            </div>
+          </div>
         ) : (
           <p className="text-center text-gray-500 py-12">No data available</p>
         )}
