@@ -13,6 +13,11 @@ public class ChatbotController : ControllerBase
     private readonly IAIService _aiService;
     private readonly ILogger<ChatbotController> _logger;
 
+    private const string SystemPrompt = @"You are a helpful assistant for a job recruitment platform. 
+Answer questions about how to apply for jobs, update a profile, or check application status. 
+Keep answers under 3 sentences. 
+If asked something unrelated to recruitment, politely redirect the user to recruitment-related topics.";
+
     public ChatbotController(IAIService aiService, ILogger<ChatbotController> logger)
     {
         _aiService = aiService;
@@ -24,27 +29,42 @@ public class ChatbotController : ControllerBase
     public async Task<IActionResult> Ask([FromBody] ChatbotRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Message))
-            return BadRequest(new { message = "Message is required." });
+        {
+            return BadRequest(new { message = "Message cannot be empty." });
+        }
+
+        if (request.Message.Length > 500)
+        {
+            return BadRequest(new { message = "Message is too long. Please keep it under 500 characters." });
+        }
 
         try
         {
-            const string systemPrompt = @"You are a helpful assistant for a job recruitment platform. 
-Answer questions about how to apply for jobs, update a profile, or check application status. 
-Keep answers under 3 sentences. 
-If asked something unrelated to recruitment, politely redirect.";
+            _logger.LogInformation(
+                "Chatbot request received: {Message}",
+                request.Message);
 
-            var aiResponse = await _aiService.GenerateChatResponseAsync(
-                request.Message,
-                systemPrompt,
-                "gpt-4-mini"
-            );
+            var response = await _aiService.GenerateChatResponseAsync(SystemPrompt, request.Message);
 
-            return Ok(new ChatbotResponse { Response = aiResponse });
+            _logger.LogDebug(
+                "Chatbot response generated: {Response}",
+                response);
+
+            return Ok(new ChatbotResponse
+            {
+                Response = response,
+                Timestamp = DateTime.UtcNow
+            });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating chatbot response for message: {Message}", request.Message);
-            return StatusCode(500, new { message = "Failed to generate response. Please try again." });
+            _logger.LogError(ex, "Error generating chatbot response");
+            
+            return StatusCode(500, new
+            {
+                message = "Sorry, I'm having trouble processing your request right now. Please try again later.",
+                error = "An error occurred while generating the response."
+            });
         }
     }
 }

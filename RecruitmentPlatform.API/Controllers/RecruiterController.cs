@@ -5,6 +5,7 @@ using RecruitmentPlatform.Application.DTOs.Application;
 using RecruitmentPlatform.Application.DTOs.Candidate;
 using RecruitmentPlatform.Application.DTOs.Job;
 using RecruitmentPlatform.Application.Interfaces;
+using RecruitmentPlatform.Application.Services;
 using RecruitmentPlatform.Domain.Entities;
 using RecruitmentPlatform.Domain.Enums;
 using RecruitmentPlatform.Domain.Interfaces;
@@ -16,18 +17,24 @@ namespace RecruitmentPlatform.API.Controllers;
 [Authorize(Roles = "Recruiter")]
 public class RecruiterController : ControllerBase
 {
-    private readonly IUnitOfWork           _uow;
-    private readonly INotificationService  _notifications;
-    private readonly IAIService            _aiService;
+    private readonly IUnitOfWork _uow;
+    private readonly RankingService _rankingService;
+    private readonly IAIService _aiService;
+    private readonly INotificationFactory _notificationFactory;
+    private readonly ILogger<RecruiterController> _logger;
 
     public RecruiterController(
-        IUnitOfWork uow, 
-        INotificationService notifications,
-        IAIService aiService)
+        IUnitOfWork uow,
+        RankingService rankingService,
+        IAIService aiService,
+        INotificationFactory notificationFactory,
+        ILogger<RecruiterController> logger)
     {
-        _uow           = uow;
-        _notifications = notifications;
-        _aiService     = aiService;
+        _uow = uow;
+        _rankingService = rankingService;
+        _aiService = aiService;
+        _notificationFactory = notificationFactory;
+        _logger = logger;
     }
 
     // POST /api/recruiter/jobs
@@ -227,6 +234,101 @@ public class RecruiterController : ControllerBase
             .ToList());
     }
 
+    // GET /api/recruiter/jobs/{jobId}/ranked-candidates
+    [HttpGet("jobs/{jobId:guid}/ranked-candidates")]
+    public async Task<IActionResult> GetRankedCandidates(Guid jobId)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var job = await _uow.JobPostings.GetByIdAsync(jobId);
+        if (job == null) return NotFound(new { message = "Job posting not found." });
+        if (job.PostedByUserId != userId.Value) return Forbid();
+
+        _logger.LogInformation(
+            "Recruiter {UserId} requested ranked candidates for job {JobId}",
+            userId.Value, jobId);
+
+        // Use RankingService to calculate and update match scores
+        var rankedCandidates = await _rankingService.RankCandidatesForJobAsync(jobId);
+
+        return Ok(new
+        {
+            jobId = jobId,
+            jobTitle = job.Title,
+            totalCandidates = rankedCandidates.Count,
+            rankedCandidates = rankedCandidates
+        });
+    }
+
+    // POST /api/recruiter/jobs/{jobId}/generate-interview-questions
+    [HttpPost("jobs/{jobId:guid}/generate-interview-questions")]
+    public async Task<IActionResult> GenerateInterviewQuestions(Guid jobId)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var job = await _uow.JobPostings.GetByIdAsync(jobId);
+        if (job == null) return NotFound(new { message = "Job posting not found." });
+        if (job.PostedByUserId != userId.Value) return Forbid();
+
+        try
+        {
+            _logger.LogInformation(
+                "Recruiter {UserId} requested interview questions for job {JobId} ({JobTitle})",
+                userId.Value, jobId, job.Title);
+
+            var systemPrompt = @"You are an expert recruiter helping to create interview questions.
+Generate exactly 5 relevant interview questions based on the job information provided.
+Include a mix of technical questions (related to required skills) and behavioral questions.
+Return ONLY a numbered list (1-5) with each question on a new line.
+Do not include any introduction, explanation, or additional text.";
+
+            var userMessage = $@"Job Title: {job.Title}
+Job Description: {job.Description}
+Required Skills: {string.Join(", ", job.RequiredSkills)}
+Minimum Experience: {job.MinExperience} years
+
+Generate 5 interview questions for this position.";
+
+            var response = await _aiService.GenerateChatResponseAsync(systemPrompt, userMessage);
+
+            // Parse the numbered list into an array
+            var questions = response
+                .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                .Select(line => line.Trim())
+                .Where(line => !string.IsNullOrWhiteSpace(line))
+                .Select(line => {
+                    // Remove numbering (e.g., "1. ", "1)", etc.)
+                    var cleaned = System.Text.RegularExpressions.Regex.Replace(line, @"^\d+[\.\)]\s*", "");
+                    return cleaned;
+                })
+                .Where(q => !string.IsNullOrWhiteSpace(q))
+                .ToArray();
+
+            _logger.LogInformation(
+                "Generated {Count} interview questions for job {JobId}",
+                questions.Length, jobId);
+
+            return Ok(new
+            {
+                jobId = jobId,
+                jobTitle = job.Title,
+                questions = questions
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating interview questions for job {JobId}", jobId);
+            
+            return StatusCode(500, new
+            {
+                message = "An error occurred while generating interview questions.",
+                error = "Please try again later."
+            });
+        }
+    }
+
     // PATCH /api/recruiter/applications/{id}/status
     [HttpPatch("applications/{id:guid}/status")]
     public async Task<IActionResult> PatchApplicationStatus(Guid id, [FromBody] PatchApplicationStatusRequest request)
@@ -245,21 +347,19 @@ public class RecruiterController : ControllerBase
         _uow.Applications.Update(application);
         await _uow.SaveChangesAsync();
 
-        // Notify the candidate when their application status changes
-        var profile       = await _uow.CandidateProfiles.GetByIdAsync(application.CandidateProfileId);
-        var candidateUser = profile != null ? await _uow.Users.GetByIdAsync(profile.UserId) : null;
-        if (candidateUser != null)
+        // Notify candidate of status change
+        var profile = await _uow.CandidateProfiles.GetByIdAsync(application.CandidateProfileId);
+        var candidate = profile != null ? await _uow.Users.GetByIdAsync(profile.UserId) : null;
+        if (candidate != null)
         {
-            var statusLabel  = request.Status.ToString();
-            var emailSubject = $"Application Update — {job.Title}";
-            var emailBody    = $"""
-                <p>Dear {candidateUser.FullName},</p>
-                <p>Your application for <strong>{job.Title}</strong> has been updated to: <strong>{statusLabel}</strong>.</p>
-                <p>Log in to the Recruitment Platform to view your application details.</p>
-                <p>Best regards,<br/>Recruitment Platform</p>
-                """;
-
-            await _notifications.SendEmailAsync(candidateUser.Email, emailSubject, emailBody);
+            var emailChannel = _notificationFactory.CreateNotification(NotificationType.Email);
+            await emailChannel.SendAsync(
+                candidate.Email,
+                $"Application Update — {job.Title}",
+                $"<p>Hi {candidate.FullName},</p>" +
+                $"<p>Your application for <strong>{job.Title}</strong> has been updated to: " +
+                $"<strong>{request.Status}</strong>.</p>" +
+                $"<p>Log in to your account to view more details.</p>");
         }
 
         return Ok(new { id = application.Id, status = application.Status.ToString() });

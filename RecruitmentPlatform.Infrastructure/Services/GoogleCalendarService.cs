@@ -8,27 +8,26 @@ using RecruitmentPlatform.Application.Interfaces;
 namespace RecruitmentPlatform.Infrastructure.Services;
 
 /// <summary>
-/// Google Calendar integration — creates calendar events on behalf of a recruiter.
-///
-/// PROTOTYPE LIMITATION (documented assumption for the report):
-/// This implementation accepts a short-lived OAuth 2.0 access token that the
-/// recruiter obtains manually from https://developers.google.com/oauthplayground
-/// using scope: https://www.googleapis.com/auth/calendar.events
-///
-/// A production implementation would replace this with a full server-side
-/// OAuth 2.0 Authorization Code flow (PKCE), storing the refresh token
-/// securely and exchanging it for access tokens automatically.
-/// That consent-screen flow is out of scope for this prototype and is noted
-/// as a future enhancement in the report's Assumptions and Constraints section.
-///
-/// How to get a test token for the demo:
+/// Google Calendar integration for interview scheduling.
+/// 
+/// PROTOTYPE LIMITATION:
+/// This service uses a simplified OAuth flow where the recruiter provides
+/// a pre-obtained Google OAuth access token (e.g., from OAuth Playground).
+/// 
+/// For production, implement a full OAuth consent flow:
+/// - Use Google.Apis.Auth.AspNetCore for ASP.NET Core OAuth
+/// - Store refresh tokens per user in the database
+/// - Handle token refresh automatically
+/// - Implement proper consent screens
+/// 
+/// Testing:
 /// 1. Go to https://developers.google.com/oauthplayground
-/// 2. In settings (⚙) enable "Use your own OAuth credentials" and enter your
-///    Google Cloud Console Client ID + Secret for a Desktop app.
-/// 3. In Step 1, select "Calendar API v3 → .../auth/calendar.events", click Authorize.
-/// 4. In Step 2, click "Exchange authorization code for tokens".
-/// 5. Copy the "Access token" — it is valid for ~1 hour.
-/// 6. Pass it in the CalendarToken field when calling POST /api/interviews.
+/// 2. Select "Calendar API v3" → "https://www.googleapis.com/auth/calendar"
+/// 3. Click "Authorize APIs" and sign in with your Google account
+/// 4. Exchange authorization code for tokens
+/// 5. Use the "Access token" in API requests
+/// 
+/// Note: Playground tokens expire after 1 hour and cannot be refreshed.
 /// </summary>
 public class GoogleCalendarService : ICalendarService
 {
@@ -40,90 +39,96 @@ public class GoogleCalendarService : ICalendarService
     }
 
     public async Task<string?> CreateEventAsync(
-        string   recruiterGoogleToken,
-        string   title,
+        string recruiterGoogleToken,
+        string title,
         DateTime start,
-        int      durationMinutes,
-        string   attendeeEmail)
+        int durationMinutes,
+        string attendeeEmail)
     {
         if (string.IsNullOrWhiteSpace(recruiterGoogleToken))
+        {
+            _logger.LogWarning("No Google Calendar token provided. Skipping calendar event creation.");
             return null;
+        }
 
         try
         {
-            // Build a credential from the supplied bearer token (no refresh — prototype scope)
-            var credential = GoogleCredential
-                .FromAccessToken(recruiterGoogleToken)
-                .CreateScoped(CalendarService.Scope.CalendarEvents);
+            // Create credential from the provided access token
+            var credential = GoogleCredential.FromAccessToken(recruiterGoogleToken);
 
-            var calendarService = new CalendarService(new BaseClientService.Initializer
+            var service = new CalendarService(new BaseClientService.Initializer
             {
                 HttpClientInitializer = credential,
-                ApplicationName       = "Recruitment Platform",
+                ApplicationName = "Recruitment Platform",
             });
 
-            var end = start.AddMinutes(durationMinutes);
+            var endTime = start.AddMinutes(durationMinutes);
 
-            var calEvent = new Event
+            var calendarEvent = new Event
             {
-                Summary     = title,
-                Description = "Scheduled via the Recruitment Platform.",
-                Start       = new EventDateTime
+                Summary = title,
+                Description = $"Interview scheduled via Recruitment Platform",
+                Start = new EventDateTime
                 {
-                    DateTimeDateTimeOffset = new DateTimeOffset(start, TimeSpan.Zero),
-                    TimeZone              = "UTC",
+                    DateTime = start,
+                    TimeZone = "UTC",
                 },
                 End = new EventDateTime
                 {
-                    DateTimeDateTimeOffset = new DateTimeOffset(end, TimeSpan.Zero),
-                    TimeZone              = "UTC",
+                    DateTime = endTime,
+                    TimeZone = "UTC",
                 },
                 Attendees = new List<EventAttendee>
                 {
-                    new EventAttendee { Email = attendeeEmail },
+                    new EventAttendee { Email = attendeeEmail }
                 },
-                // Request Google Meet conference link automatically
                 ConferenceData = new ConferenceData
                 {
                     CreateRequest = new CreateConferenceRequest
                     {
-                        RequestId         = Guid.NewGuid().ToString(),
+                        RequestId = Guid.NewGuid().ToString(),
                         ConferenceSolutionKey = new ConferenceSolutionKey
                         {
-                            Type = "hangoutsMeet",
-                        },
-                    },
+                            Type = "hangoutsMeet" // Google Meet
+                        }
+                    }
                 },
+                Reminders = new Event.RemindersData
+                {
+                    UseDefault = false,
+                    Overrides = new List<EventReminder>
+                    {
+                        new EventReminder { Method = "email", Minutes = 24 * 60 }, // 1 day before
+                        new EventReminder { Method = "popup", Minutes = 30 },      // 30 mins before
+                    }
+                }
             };
 
-            var insertRequest = calendarService.Events.Insert(calEvent, "primary");
-            insertRequest.ConferenceDataVersion = 1; // required to trigger Meet link creation
-            insertRequest.SendUpdates           = EventsResource.InsertRequest.SendUpdatesEnum.All;
+            var request = service.Events.Insert(calendarEvent, "primary");
+            request.ConferenceDataVersion = 1; // Required for Google Meet link generation
+            request.SendUpdates = EventsResource.InsertRequest.SendUpdatesEnum.All;
 
-            var createdEvent = await insertRequest.ExecuteAsync();
+            var createdEvent = await request.ExecuteAsync();
 
-            // Prefer the Google Meet link; fall back to the calendar event HTML link
-            var meetLink = createdEvent.ConferenceData?.EntryPoints
-                ?.FirstOrDefault(ep => ep.EntryPointType == "video")
-                ?.Uri;
-
-            var link = meetLink ?? createdEvent.HtmlLink;
+            var meetingLink = createdEvent.HangoutLink ?? createdEvent.HtmlLink;
 
             _logger.LogInformation(
-                "[GoogleCalendarService] Event created: '{Title}' on {Start} UTC | Link: {Link}",
-                title, start, link);
+                "Google Calendar event created: {EventId} | Meeting link: {MeetingLink}",
+                createdEvent.Id, meetingLink);
 
-            return link;
+            return meetingLink;
+        }
+        catch (Google.GoogleApiException ex)
+        {
+            _logger.LogError(ex,
+                "Google Calendar API error: {Message}. " +
+                "Token may be expired or invalid. Status: {StatusCode}",
+                ex.Message, ex.HttpStatusCode);
+            return null;
         }
         catch (Exception ex)
         {
-            // Don't crash the interview-scheduling endpoint if Calendar fails.
-            // The interview is still saved; the recruiter can add the link manually.
-            _logger.LogWarning(ex,
-                "[GoogleCalendarService] Failed to create calendar event for '{Title}'. " +
-                "Interview will be saved without a meeting link. " +
-                "Common causes: expired token, missing calendar.events scope, or API not enabled in GCP.",
-                title);
+            _logger.LogError(ex, "Unexpected error creating Google Calendar event");
             return null;
         }
     }

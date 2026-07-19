@@ -14,18 +14,18 @@ namespace RecruitmentPlatform.API.Controllers;
 [Authorize(Roles = "HiringManager")]
 public class HiringManagerController : ControllerBase
 {
-    private readonly IUnitOfWork                       _uow;
-    private readonly INotificationService              _notifications;
-    private readonly ILogger<HiringManagerController>  _logger;
+    private readonly IUnitOfWork _uow;
+    private readonly INotificationFactory _notificationFactory;
+    private readonly ILogger<HiringManagerController> _logger;
 
     public HiringManagerController(
-        IUnitOfWork                       uow,
-        INotificationService              notifications,
-        ILogger<HiringManagerController>  logger)
+        IUnitOfWork uow,
+        INotificationFactory notificationFactory,
+        ILogger<HiringManagerController> logger)
     {
-        _uow           = uow;
-        _notifications = notifications;
-        _logger        = logger;
+        _uow = uow;
+        _notificationFactory = notificationFactory;
+        _logger = logger;
     }
 
     // GET /api/hiring-manager/shortlisted
@@ -160,39 +160,42 @@ public class HiringManagerController : ControllerBase
         application.Status = request.Decision;
         await _uow.SaveChangesAsync();
 
-        // Get candidate info for notification
+        // Get candidate info and notify via email
         var profile = await _uow.CandidateProfiles.GetByIdAsync(application.CandidateProfileId);
-        var user    = profile != null ? await _uow.Users.GetByIdAsync(profile.UserId) : null;
-        var job     = await _uow.JobPostings.GetByIdAsync(application.JobPostingId);
+        var user = profile != null ? await _uow.Users.GetByIdAsync(profile.UserId) : null;
+        var job = await _uow.JobPostings.GetByIdAsync(application.JobPostingId);
 
-        // Send email notification to candidate (replaces Part 5.3 log stub)
-        if (user != null && job != null)
+        if (user != null)
         {
-            var decisionText  = request.Decision == ApplicationStatus.Hired ? "Congratulations, you have been hired" : "Unfortunately, your application has been unsuccessful";
-            var emailSubject  = request.Decision == ApplicationStatus.Hired
-                ? $"Job Offer — {job.Title}"
-                : $"Application Update — {job.Title}";
-            var emailBody     = $"""
-                <p>Dear {user.FullName},</p>
-                <p>{decisionText} for the position of <strong>{job.Title}</strong>.</p>
-                <p>Thank you for your interest in joining our team.</p>
-                <p>Best regards,<br/>Recruitment Platform</p>
-                """;
+            var emailChannel = _notificationFactory.CreateNotification(NotificationType.Email);
+            var decisionText = request.Decision == ApplicationStatus.Hired ? "hired" : "rejected";
 
-            await _notifications.SendEmailAsync(user.Email, emailSubject, emailBody);
-        }
-        else
-        {
-            _logger.LogWarning(
-                "[HiringManagerController] Could not send notification for application {ApplicationId} — candidate or job data missing.",
-                id);
+            var subject = request.Decision == ApplicationStatus.Hired
+                ? $"Congratulations! You've been hired — {job?.Title}"
+                : $"Application Update — {job?.Title}";
+
+            var body = request.Decision == ApplicationStatus.Hired
+                ? $"<p>Hi {user.FullName},</p>" +
+                  $"<p>Congratulations! We are thrilled to inform you that you have been <strong>hired</strong> " +
+                  $"for the position of <strong>{job?.Title ?? "the role"}</strong>.</p>" +
+                  $"<p>Our team will reach out shortly with onboarding details. Welcome aboard!</p>"
+                : $"<p>Hi {user.FullName},</p>" +
+                  $"<p>Thank you for your interest in <strong>{job?.Title ?? "the role"}</strong>. " +
+                  $"After careful consideration, we have decided to move forward with other candidates.</p>" +
+                  $"<p>We encourage you to apply for future openings. Best of luck in your search!</p>";
+
+            await emailChannel.SendAsync(user.Email, subject, body);
+
+            _logger.LogInformation(
+                "Decision notification sent to {CandidateName} ({Email}): {Decision} for {JobTitle}",
+                user.FullName, user.Email, decisionText, job?.Title ?? "Unknown");
         }
 
         return Ok(new
         {
             id = application.Id,
             status = application.Status,
-            message = $"Application status updated to {request.Decision}. Notification sent to candidate."
+            message = $"Application status updated to {request.Decision}. Candidate notified by email."
         });
     }
 

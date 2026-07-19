@@ -13,18 +13,21 @@ namespace RecruitmentPlatform.API.Controllers;
 [Authorize]
 public class InterviewController : ControllerBase
 {
-    private readonly IUnitOfWork           _uow;
-    private readonly INotificationService  _notifications;
-    private readonly ICalendarService      _calendar;
+    private readonly IUnitOfWork _uow;
+    private readonly INotificationFactory _notificationFactory;
+    private readonly ICalendarService _calendarService;
+    private readonly ILogger<InterviewController> _logger;
 
     public InterviewController(
-        IUnitOfWork          uow,
-        INotificationService notifications,
-        ICalendarService     calendar)
+        IUnitOfWork uow,
+        INotificationFactory notificationFactory,
+        ICalendarService calendarService,
+        ILogger<InterviewController> logger)
     {
-        _uow           = uow;
-        _notifications = notifications;
-        _calendar      = calendar;
+        _uow = uow;
+        _notificationFactory = notificationFactory;
+        _calendarService = calendarService;
+        _logger = logger;
     }
 
     // POST /api/interviews
@@ -93,6 +96,31 @@ public class InterviewController : ControllerBase
             Status          = InterviewStatus.Scheduled,
         };
 
+        // If recruiter provided Google Calendar token, create calendar event
+        if (!string.IsNullOrWhiteSpace(request.GoogleCalendarToken))
+        {
+            var profile = await _uow.CandidateProfiles.GetByIdAsync(application.CandidateProfileId);
+            var candidate = profile != null ? await _uow.Users.GetByIdAsync(profile.UserId) : null;
+
+            if (candidate != null)
+            {
+                var calendarLink = await _calendarService.CreateEventAsync(
+                    request.GoogleCalendarToken,
+                    $"Interview: {job.Title}",
+                    request.ScheduledAt,
+                    request.DurationMinutes,
+                    candidate.Email);
+
+                if (calendarLink != null)
+                {
+                    interview.MeetingLink = calendarLink;
+                    _logger.LogInformation(
+                        "Google Calendar event created for interview {InterviewId}: {MeetingLink}",
+                        interview.Id, calendarLink);
+                }
+            }
+        }
+
         await _uow.Interviews.AddAsync(interview);
 
         // Update application status
@@ -100,27 +128,25 @@ public class InterviewController : ControllerBase
 
         await _uow.SaveChangesAsync();
 
-        // Notify candidate that an interview has been scheduled
+        // Notify candidate of interview schedule
         var candidateProfile = await _uow.CandidateProfiles.GetByIdAsync(application.CandidateProfileId);
-        var candidateUser    = candidateProfile != null ? await _uow.Users.GetByIdAsync(candidateProfile.UserId) : null;
-        if (candidateUser != null && job != null)
+        var candidateUser = candidateProfile != null ? await _uow.Users.GetByIdAsync(candidateProfile.UserId) : null;
+        if (candidateUser != null)
         {
-            var meetingInfo  = string.IsNullOrWhiteSpace(interview.MeetingLink)
-                ? "Details will be sent separately."
+            var emailChannel = _notificationFactory.CreateNotification(NotificationType.Email);
+            var meetingInfo = string.IsNullOrWhiteSpace(interview.MeetingLink)
+                ? "Your interviewer will be in touch with meeting details."
                 : $"Meeting link: {interview.MeetingLink}";
-            var emailSubject = $"Interview Scheduled — {job.Title}";
-            var emailBody    = $"""
-                <p>Dear {candidateUser.FullName},</p>
-                <p>Your interview for the position of <strong>{job.Title}</strong> has been scheduled.</p>
-                <ul>
-                    <li><strong>Date &amp; Time:</strong> {interview.ScheduledAt:dddd, dd MMMM yyyy HH:mm} UTC</li>
-                    <li><strong>Duration:</strong> {interview.DurationMinutes} minutes</li>
-                    <li>{meetingInfo}</li>
-                </ul>
-                <p>Best regards,<br/>Recruitment Platform</p>
-                """;
 
-            await _notifications.SendEmailAsync(candidateUser.Email, emailSubject, emailBody);
+            await emailChannel.SendAsync(
+                candidateUser.Email,
+                $"Interview Scheduled — {job.Title}",
+                $"<p>Hi {candidateUser.FullName},</p>" +
+                $"<p>Your interview for <strong>{job.Title}</strong> has been scheduled.</p>" +
+                $"<p><strong>Date & Time:</strong> {request.ScheduledAt:f} UTC<br/>" +
+                $"<strong>Duration:</strong> {request.DurationMinutes} minutes<br/>" +
+                $"{meetingInfo}</p>" +
+                $"<p>Good luck!</p>");
         }
 
         return CreatedAtAction(nameof(CreateInterview), new { id = interview.Id },
@@ -212,6 +238,21 @@ public class InterviewController : ControllerBase
 
         interview.Status = InterviewStatus.Cancelled;
         await _uow.SaveChangesAsync();
+
+        // Notify candidate of cancellation
+        var profile = await _uow.CandidateProfiles.GetByIdAsync(application.CandidateProfileId);
+        var candidate = profile != null ? await _uow.Users.GetByIdAsync(profile.UserId) : null;
+        if (candidate != null)
+        {
+            var emailChannel = _notificationFactory.CreateNotification(NotificationType.Email);
+            await emailChannel.SendAsync(
+                candidate.Email,
+                $"Interview Cancelled — {job.Title}",
+                $"<p>Hi {candidate.FullName},</p>" +
+                $"<p>Unfortunately, your interview for <strong>{job.Title}</strong> scheduled for " +
+                $"{interview.ScheduledAt:f} UTC has been cancelled.</p>" +
+                $"<p>Our team will be in touch to reschedule. Apologies for the inconvenience.</p>");
+        }
 
         return Ok(await MapToResponse(interview));
     }
