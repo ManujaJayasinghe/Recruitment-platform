@@ -22,6 +22,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Evaluation> Evaluations => Set<Evaluation>();
     public DbSet<SkillAssessment> SkillAssessments => Set<SkillAssessment>();
     public DbSet<Message> Messages => Set<Message>();
+    public DbSet<SmsLog>  SmsLogs  => Set<SmsLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

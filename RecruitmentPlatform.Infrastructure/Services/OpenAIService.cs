@@ -42,6 +42,8 @@ public class OpenAIService : IAIService
 
     public async Task<string> ParseResumeAsync(string resumeText)
     {
+        _logger.LogInformation("Starting resume parsing with OpenAI. Text length: {TextLength} characters", resumeText?.Length ?? 0);
+        
         try
         {
             var systemPrompt = @"You are a resume parsing assistant. Extract information from the resume and return ONLY valid JSON with no additional text or explanation.
@@ -62,6 +64,8 @@ Rules:
 - Write a concise summary highlighting key qualifications";
 
             var response = await GenerateChatResponseAsync(systemPrompt, resumeText);
+            
+            _logger.LogInformation("Resume parsing completed successfully. Response length: {Length} characters", response.Length);
             return response;
         }
         catch (Exception ex)
@@ -73,6 +77,8 @@ Rules:
 
     public async Task<float[]> GetEmbeddingAsync(string text)
     {
+        _logger.LogInformation("Generating embedding for text. Length: {TextLength} characters", text?.Length ?? 0);
+        
         try
         {
             if (string.IsNullOrWhiteSpace(text))
@@ -83,18 +89,21 @@ Rules:
             var response = await _embeddingClient.GenerateEmbeddingAsync(text);
             var embedding = response.Value.ToFloats().ToArray();
 
-            _logger.LogDebug("Generated embedding with {Dimensions} dimensions", embedding.Length);
+            _logger.LogInformation("Generated embedding successfully. Dimensions: {Dimensions}", embedding.Length);
             return embedding;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating embedding with OpenAI");
+            _logger.LogError(ex, "Error generating embedding with OpenAI for text length: {Length}", text?.Length ?? 0);
             throw;
         }
     }
 
     public async Task<string> GenerateChatResponseAsync(string systemPrompt, string userMessage)
     {
+        _logger.LogInformation("Generating chat response. Model: {Model}, User message length: {Length} characters", 
+            _chatModel, userMessage?.Length ?? 0);
+        
         try
         {
             if (string.IsNullOrWhiteSpace(userMessage))
@@ -111,12 +120,12 @@ Rules:
             var response = await _chatClient.CompleteChatAsync(messages);
             var content = response.Value.Content[0].Text;
 
-            _logger.LogDebug("Generated chat response with {Length} characters", content.Length);
+            _logger.LogInformation("Chat response generated successfully. Response length: {Length} characters", content.Length);
             return content;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating chat response with OpenAI");
+            _logger.LogError(ex, "Error generating chat response with OpenAI. Model: {Model}", _chatModel);
             throw;
         }
     }
