@@ -201,11 +201,7 @@ dotnet restore
 dotnet ef database update
 ```
 
-This creates the database schema and seeds initial test data:
-- Admin user: `admin@platform.com` / `Admin123!`
-- Recruiter user: `recruiter@techcorp.com` / `Recruiter123!`
-- Hiring Manager user: `manager@techcorp.com` / `Manager123!`
-- Candidate user: `john.doe@email.com` / `Candidate123!`
+This creates the database schema.
 
 **Step 2.6: Run the Backend**
 
@@ -213,9 +209,9 @@ This creates the database schema and seeds initial test data:
 dotnet run
 ```
 
-The API will start at `https://localhost:7001` (HTTPS) and `http://localhost:5000` (HTTP).
+The API will start at `https://localhost:7139` (HTTPS) and `http://localhost:5233` (HTTP).
 
-Swagger documentation available at: `https://localhost:7001/swagger`
+Swagger documentation available at: `https://localhost:5233/swagger`
 
 #### 3. Frontend Setup
 
@@ -233,10 +229,10 @@ npm install
 
 **Step 3.3: Configure API Base URL** (if needed)
 
-The frontend is configured to connect to `http://localhost:5000` by default. To change this, edit `client/src/services/api.js`:
+The frontend is configured to connect to `http://localhost:5173` by default. To change this, edit `client/src/services/api.js`:
 
 ```javascript
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'http://localhost:5173/api';
 ```
 
 **Step 3.4: Run the Development Server**
@@ -251,16 +247,16 @@ The React app will start at `http://localhost:5173` with hot module replacement 
 
 Open your browser and navigate to:
 - **Frontend:** http://localhost:5173
-- **API Swagger:** https://localhost:7001/swagger
+- **API Swagger:** https://localhost:5233/swagger
 
-**Test Credentials:**
+**Login Credentials:**
 
 | Role | Email | Password |
 |------|-------|----------|
-| Admin | admin@platform.com | Admin123! |
-| Recruiter | recruiter@techcorp.com | Recruiter123! |
-| Hiring Manager | manager@techcorp.com | Manager123! |
-| Candidate | john.doe@email.com | Candidate123! |
+| Admin | manuja.jayasinghe@example.com | Password123! |
+| Recruiter | kethmi.warnasooriya@example.com | Password123! |
+| Hiring Manager | yathindu.jayawardena@example.com | Password123! |
+| Candidate | naveen.darshana@example.com | Password123! |
 
 ### Environment Configuration
 
@@ -642,7 +638,7 @@ The Recruitment Platform API is a RESTful service built on ASP.NET Core 10.0. It
 
 **Base URL (Development):** `http://localhost:5000/api`
 
-**Interactive Documentation:** `https://localhost:7001/swagger`
+**Interactive Documentation:** `https://localhost:5233/swagger`
 
 ### Authentication
 
@@ -659,8 +655,8 @@ POST /api/Auth/login
 Content-Type: application/json
 
 {
-  "email": "user@example.com",
-  "password": "password123"
+  "email": "naveen.darshana@example.com",
+  "password": "Password123!"
 }
 ```
 
@@ -668,13 +664,11 @@ Content-Type: application/json
 
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "user": {
-    "id": 1,
-    "email": "user@example.com",
-    "fullName": "John Doe",
-    "role": "Candidate"
-  }
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjU5YWMwYWY5LWUwOWQtNDNiMC1hYjIwLTY4ZWI0YzQyOTg4NSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6Im5hdmVlbi5kYXJzaGFuYUBleGFtcGxlLmNvbSIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IkNhbmRpZGF0ZSIsImV4cCI6MTc4NDkwMDgwOCwiaXNzIjoiUmVjcnVpdG1lbnRQbGF0Zm9ybSIsImF1ZCI6IlJlY3J1aXRtZW50UGxhdGZvcm1Vc2VycyJ9.mwkh6H-vGZneHD5poEpwxDsSMzDB40dGRg8iH9SROJY",
+  "userId": "59ac0af9-e09d-43b0-ab20-68eb4c429885",
+  "fullName": "Naveen Darshana",
+  "role": "Candidate",
+  "expiresAt": "2026-07-24T13:46:48.72489Z"
 }
 ```
 
@@ -828,9 +822,6 @@ Production: Configure allowed origins in `appsettings.Production.json`
 
 ---
 
-## 🎨 Design System
-
-The Recruitment Platform implements a comprehensive design system for consistency, accessibility, and maintainability. Full documentation available in `DESIGN_SYSTEM.md`.
 
 ### Visual Design Tokens
 
@@ -1373,10 +1364,6 @@ git push origin feature/your-feature-name
 
 ---
 
-## 📄 License
-
-This project is licensed under the MIT License. See the `LICENSE` file for details.
-
 ---
 
 ## 🙏 Acknowledgments
@@ -1397,47 +1384,8 @@ For support, questions, or feedback:
 - **Documentation:** Check this README and linked documentation files
 - **Issues:** Open a GitHub issue for bugs or feature requests
 - **Discussions:** Use GitHub Discussions for questions
-- **Email:** support@recruitment-platform.com
-
----
-
-## 🗺️ Roadmap
-
-### Upcoming Features
-
-**Q1 2027:**
-- [ ] Advanced AI resume parsing
-- [ ] Video interview integration (Zoom, Teams)
-- [ ] Mobile applications (iOS, Android)
-- [ ] Advanced reporting and custom dashboards
-
-**Q2 2027:**
-- [ ] Candidate assessments and skills testing
-- [ ] Offer letter generation and e-signatures
-- [ ] Background check integration
-- [ ] Employee onboarding workflows
-
-**Q3 2027:**
-- [ ] Multi-language support (i18n)
-- [ ] Advanced search with Elasticsearch
-- [ ] Candidate referral program features
-- [ ] Integration marketplace (LinkedIn, Indeed, Glassdoor)
-
-**Q4 2027:**
-- [ ] Machine learning for candidate matching
-- [ ] Bias detection in job descriptions
-- [ ] Diversity hiring analytics
-- [ ] Customizable workflows and automation
 
 ---
 
 **Built with ❤️ by the Recruitment Platform Team**
 
-**Version:** 1.0.0  
-**Last Updated:** January 2027
-
-For more detailed documentation, see:
-- `DESIGN_SYSTEM.md` - Design tokens and component library
-- `ACCESSIBILITY_AUDIT.md` - Accessibility compliance details
-- `CHATBOT_AI_IMPROVEMENTS.md` - AI assistant features
-- `NAVIGATION_IMPROVEMENTS.md` - UX enhancements
